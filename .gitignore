@@ -40,3 +40,4 @@ metadata-*.yml
 # Environment files
 .env
 .envrc
+main
