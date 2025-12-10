@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/malston/tile-diff/pkg/api"
 	"github.com/malston/tile-diff/pkg/compare"
