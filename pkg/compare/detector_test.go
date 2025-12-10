@@ -113,3 +113,96 @@ func TestFindRemovedProperties(t *testing.T) {
 		t.Errorf("Expected ChangeType PropertyRemoved, got %v", configurableRemoved[0].ChangeType)
 	}
 }
+
+func TestFindChangedProperties(t *testing.T) {
+	oldProps := map[string]metadata.PropertyBlueprint{
+		"unchanged_prop": {
+			Name:         "unchanged_prop",
+			Type:         "string",
+			Configurable: true,
+			Optional:     false,
+		},
+		"type_changed": {
+			Name:         "type_changed",
+			Type:         "string",
+			Configurable: true,
+			Optional:     false,
+		},
+		"optional_changed": {
+			Name:         "optional_changed",
+			Type:         "string",
+			Configurable: true,
+			Optional:     false,
+		},
+		"system_prop_changed": {
+			Name:         "system_prop_changed",
+			Type:         "string",
+			Configurable: false,
+			Optional:     false,
+		},
+	}
+
+	newProps := map[string]metadata.PropertyBlueprint{
+		"unchanged_prop": {
+			Name:         "unchanged_prop",
+			Type:         "string",
+			Configurable: true,
+			Optional:     false,
+		},
+		"type_changed": {
+			Name:         "type_changed",
+			Type:         "integer",
+			Configurable: true,
+			Optional:     false,
+		},
+		"optional_changed": {
+			Name:         "optional_changed",
+			Type:         "string",
+			Configurable: true,
+			Optional:     true,
+		},
+		"system_prop_changed": {
+			Name:         "system_prop_changed",
+			Type:         "integer",
+			Configurable: false,
+			Optional:     false,
+		},
+	}
+
+	// Test: find all changed properties
+	allChanged := FindChangedProperties(oldProps, newProps, false)
+	if len(allChanged) != 3 {
+		t.Errorf("Expected 3 changed properties, got %d", len(allChanged))
+	}
+
+	// Test: find only configurable changed properties
+	configurableChanged := FindChangedProperties(oldProps, newProps, true)
+	if len(configurableChanged) != 2 {
+		t.Errorf("Expected 2 configurable changed properties, got %d", len(configurableChanged))
+	}
+
+	// Verify type change detection
+	var typeChangeFound bool
+	for _, result := range configurableChanged {
+		if result.PropertyName == "type_changed" && result.ChangeType == TypeChanged {
+			typeChangeFound = true
+			if result.OldProperty.Type != "string" || result.NewProperty.Type != "integer" {
+				t.Error("Type change not correctly detected")
+			}
+		}
+	}
+	if !typeChangeFound {
+		t.Error("Type change not detected")
+	}
+
+	// Verify optionality change detection
+	var optionalityChangeFound bool
+	for _, result := range configurableChanged {
+		if result.PropertyName == "optional_changed" && result.ChangeType == OptionalityChanged {
+			optionalityChangeFound = true
+		}
+	}
+	if !optionalityChangeFound {
+		t.Error("Optionality change not detected")
+	}
+}

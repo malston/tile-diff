@@ -63,3 +63,48 @@ func FindRemovedProperties(oldProps, newProps map[string]metadata.PropertyBluepr
 
 	return results
 }
+
+// FindChangedProperties identifies properties that exist in both versions but have changed
+func FindChangedProperties(oldProps, newProps map[string]metadata.PropertyBlueprint, configurableOnly bool) []ComparisonResult {
+	var results []ComparisonResult
+
+	for name, oldProp := range oldProps {
+		newProp, exists := newProps[name]
+		if !exists {
+			// Property was removed, not changed
+			continue
+		}
+
+		// Skip non-configurable if filtering
+		if configurableOnly && !oldProp.Configurable {
+			continue
+		}
+
+		// Check for type change
+		if oldProp.Type != newProp.Type {
+			result := ComparisonResult{
+				PropertyName: name,
+				ChangeType:   TypeChanged,
+				OldProperty:  &oldProp,
+				NewProperty:  &newProp,
+				Description:  fmt.Sprintf("Type changed from %s to %s", oldProp.Type, newProp.Type),
+			}
+			results = append(results, result)
+			continue
+		}
+
+		// Check for optionality change
+		if oldProp.Optional != newProp.Optional {
+			result := ComparisonResult{
+				PropertyName: name,
+				ChangeType:   OptionalityChanged,
+				OldProperty:  &oldProp,
+				NewProperty:  &newProp,
+				Description:  fmt.Sprintf("Optional changed from %v to %v", oldProp.Optional, newProp.Optional),
+			}
+			results = append(results, result)
+		}
+	}
+
+	return results
+}
