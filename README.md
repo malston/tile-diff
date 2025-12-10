@@ -14,30 +14,82 @@ This tool automates that analysis by comparing tile metadata and cross-referenci
 
 ## Status
 
-🚧 **Phase 1 MVP - In Development**
+✅ **Phase 1 MVP - Complete**
 
-Currently implementing core extraction and parsing functionality.
+Core extraction and parsing functionality implemented:
+- Extract metadata from .pivotal ZIP archives
+- Parse property_blueprints YAML into Go structs
+- Query Ops Manager API for current configuration
+- Display property counts for validation
+
+🚧 **Phase 2 - In Planning**
+
+Next: Implement comparison logic to identify new, removed, and changed properties.
 
 ## Documentation
 
 - [Implementation Specification](docs/2025-12-10-tile-diff-implementation-spec.md)
-- [Phase 1 Implementation Plan](docs/phase-1-implementation-plan.md) (coming soon)
+- [Phase 1 Implementation Plan](docs/plans/2025-12-10-phase-1-mvp.md)
 
 ## Quick Start
 
-*(Coming soon)*
+### Build
 
 ```bash
-# Compare two tile versions
-tile-diff compare \
-  --old-tile srt-6.0.22.pivotal \
-  --new-tile srt-10.2.5.pivotal
+make build
+```
 
-# Include current Ops Manager configuration
-tile-diff compare \
+### Run Phase 1 MVP
+
+Compare two tile versions (metadata only):
+
+```bash
+./tile-diff --old-tile srt-6.0.22.pivotal --new-tile srt-10.2.5.pivotal
+```
+
+Include current Ops Manager configuration:
+
+```bash
+./tile-diff \
   --old-tile srt-6.0.22.pivotal \
   --new-tile srt-10.2.5.pivotal \
-  --product-guid cf-xxxxx
+  --product-guid cf-85da7fd88e99806e5d08 \
+  --ops-manager-url https://opsman.tas.vcf.lab \
+  --username admin \
+  --password your-password \
+  --skip-ssl-validation
+```
+
+### Example Output
+
+```
+tile-diff Phase 1 MVP
+=====================
+
+Loading old tile: srt-6.0.22.pivotal
+  Found 450 properties
+Loading new tile: srt-10.2.5.pivotal
+  Found 520 properties
+
+Configurable properties:
+  Old tile: 422
+  New tile: 485
+
+Querying Ops Manager API...
+  Found 599 total properties
+  Configurable: 422
+  Currently configured: ~156
+
+==================================================
+Phase 1 MVP: Complete ✓
+==================================================
+
+Data sources validated:
+  ✓ Old tile metadata extraction
+  ✓ New tile metadata extraction
+  ✓ Ops Manager API current configuration
+
+Next phase: Implement comparison logic
 ```
 
 ## Development
