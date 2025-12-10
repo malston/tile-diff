@@ -15,7 +15,9 @@ This tool automates that analysis by comparing tile metadata and cross-referenci
 ## Status
 
 ✅ **Phase 1 Complete** - Extraction & parsing
+
 ✅ **Phase 2 Complete** - Property comparison
+
 ✅ **Phase 3 Complete** - Actionable reports
 
 Full upgrade analysis with:
@@ -81,39 +83,86 @@ make build
 ### Example Output
 
 ```
-tile-diff - Ops Manager Product Tile Comparison
-================================================
+================================================================================
+                    Ops Manager Tile Upgrade Analysis
+================================================================================
 
-Loading old tile: srt-6.0.22.pivotal
+Old Version: srt-6.0.22
+New Version: srt-10.2.5
+
+Loading old tile...
   Found 274 properties (184 configurable)
-Loading new tile: srt-10.2.5.pivotal
+Loading new tile...
   Found 272 properties (182 configurable)
 
-Comparing tiles...
+Querying Ops Manager API...
+  Found 599 total properties
+  Currently configured: 156
 
-Comparison Results:
-===================
+Analyzing changes...
 
-✨ New Properties (15):
-  + .properties.new_feature_flag (boolean)
-  + .properties.enhanced_logging_level (string)
-  + .properties.retry_configuration (integer)
-  ...
+Total Changes: 12
+  Required Actions: 2
+  Warnings: 4
+  Informational: 6
 
-🗑️  Removed Properties (8):
-  - .properties.deprecated_setting (boolean)
-  - .properties.legacy_timeout (integer)
-  ...
+================================================================================
+🚨 REQUIRED ACTIONS
+================================================================================
 
-🔄 Changed Properties (5):
-  ~ .properties.memory_limit: Type changed from string to integer
-  ~ .properties.optional_field: Now required (was optional)
-  ...
+1. .properties.new_security_setting
+   Type: boolean
+   Status: New required property (no default)
+   Current: Not set
+   Action: Must configure this property before upgrading
+   Recommendation: Set to 'true' for enhanced security
 
-Summary:
-  Properties in old tile: 274 (184 configurable)
-  Properties in new tile: 272 (182 configurable)
-  Added: 15, Removed: 8, Changed: 5
+2. .properties.authentication_method
+   Type: selector
+   Status: Type changed from string to selector
+   Current: "basic"
+   Action: Update to use new selector format
+   Recommendation: Choose 'oauth' option for modern authentication
+
+================================================================================
+⚠️  WARNINGS
+================================================================================
+
+3. .properties.deprecated_timeout
+   Type: integer
+   Status: Removed in new version
+   Current: 30
+   Action: Property will be ignored after upgrade
+   Recommendation: Review if this setting impacts your deployment
+
+4. .properties.memory_limit
+   Type: integer
+   Status: Constraints changed (min: 512 → 1024)
+   Current: 768
+   Action: Current value 768 is below new minimum 1024
+   Recommendation: Update to at least 1024 MB
+
+================================================================================
+ℹ️  INFORMATIONAL
+================================================================================
+
+5. .properties.new_optional_feature
+   Type: boolean
+   Status: New optional property
+   Current: Not set
+   Default: false
+   Recommendation: Enable for improved logging capabilities
+
+6. .properties.enhanced_monitoring
+   Type: string
+   Status: New optional property
+   Current: Not set
+   Default: "basic"
+   Recommendation: Consider 'advanced' for production environments
+
+================================================================================
+Summary: 2 required actions must be completed before upgrade
+================================================================================
 ```
 
 ## Development
