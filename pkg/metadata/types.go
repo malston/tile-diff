@@ -9,15 +9,14 @@ type PropertyBlueprint struct {
 	Configurable    bool                `yaml:"configurable"`
 	Optional        bool                `yaml:"optional"`
 	Default         interface{}         `yaml:"default,omitempty"`
-	Constraints     *Constraints        `yaml:"constraints,omitempty"`
+	Constraints     interface{}         `yaml:"constraints,omitempty"`
 	OptionTemplates []OptionTemplate    `yaml:"option_templates,omitempty"`
 }
 
-// Constraints defines validation rules for property values
-type Constraints struct {
-	Min *int `yaml:"min,omitempty"`
-	Max *int `yaml:"max,omitempty"`
-}
+// Constraints can be either:
+// - An object with fields like min, max, may_only_be_odd_or_zero
+// - An array of constraint objects with must_match_regex, error_message, etc.
+// For Phase 1 MVP, we use interface{} since we're not validating constraints yet
 
 // OptionTemplate represents a selector option with nested properties
 type OptionTemplate struct {

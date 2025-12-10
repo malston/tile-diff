@@ -37,6 +37,7 @@ default: true
 }
 
 func TestConstraintsUnmarshal(t *testing.T) {
+	// Test constraints as object (min/max)
 	yamlData := `
 name: count
 type: integer
@@ -53,11 +54,23 @@ constraints:
 	if pb.Constraints == nil {
 		t.Fatal("Expected constraints to be non-nil")
 	}
-	if pb.Constraints.Min == nil || *pb.Constraints.Min != 1 {
-		t.Errorf("Expected min constraint to be 1")
+
+	// Test constraints as array (regex patterns)
+	yamlData2 := `
+name: pattern_field
+type: string
+constraints:
+  - must_match_regex: ^[^"\\\]]+$
+    error_message: cannot contain special characters
+`
+	var pb2 PropertyBlueprint
+	err = yaml.Unmarshal([]byte(yamlData2), &pb2)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal array constraints: %v", err)
 	}
-	if pb.Constraints.Max == nil || *pb.Constraints.Max != 100 {
-		t.Errorf("Expected max constraint to be 100")
+
+	if pb2.Constraints == nil {
+		t.Fatal("Expected array constraints to be non-nil")
 	}
 }
 
