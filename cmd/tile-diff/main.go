@@ -6,7 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/malston/tile-diff/pkg/api"
 	"github.com/malston/tile-diff/pkg/metadata"
 )
 
@@ -58,18 +60,52 @@ func main() {
 	fmt.Printf("  Old tile: %d\n", oldConfigurable)
 	fmt.Printf("  New tile: %d\n", newConfigurable)
 
-	// API client placeholder
-	if *productGUID != "" && *opsManagerURL != "" {
-		fmt.Printf("\n[Next: Add API client integration]\n")
-		fmt.Printf("Product GUID: %s\n", *productGUID)
-		fmt.Printf("Ops Manager: %s\n", *opsManagerURL)
-		// Keep these to avoid unused variable errors
-		_ = username
-		_ = password
-		_ = skipSSL
+	// Load current configuration if API credentials provided
+	if *productGUID != "" && *opsManagerURL != "" && *username != "" && *password != "" {
+		fmt.Printf("\nQuerying Ops Manager API...\n")
+		client := api.NewClient(*opsManagerURL, *username, *password, *skipSSL)
+
+		properties, err := client.GetProperties(*productGUID)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error fetching properties from Ops Manager: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("  Found %d total properties\n", len(properties.Properties))
+
+		// Count configurable properties in current config
+		currentConfigurable := 0
+		for _, prop := range properties.Properties {
+			if prop.Configurable {
+				currentConfigurable++
+			}
+		}
+		fmt.Printf("  Configurable: %d\n", currentConfigurable)
+
+		// Count properties with non-default values (approximate)
+		configured := 0
+		for _, prop := range properties.Properties {
+			if prop.Configurable && prop.Value != nil {
+				configured++
+			}
+		}
+		fmt.Printf("  Currently configured: ~%d\n", configured)
+	} else if *productGUID != "" {
+		fmt.Printf("\nSkipping Ops Manager API (credentials not provided)\n")
+		fmt.Printf("To include current configuration, provide:\n")
+		fmt.Printf("  --ops-manager-url, --username, --password\n")
 	}
 
-	fmt.Printf("\nPhase 1 MVP: Data extraction complete ✓\n")
+	fmt.Printf("\n%s\n", strings.Repeat("=", 50))
+	fmt.Printf("Phase 1 MVP: Complete ✓\n")
+	fmt.Printf("%s\n\n", strings.Repeat("=", 50))
+	fmt.Printf("Data sources validated:\n")
+	fmt.Printf("  ✓ Old tile metadata extraction\n")
+	fmt.Printf("  ✓ New tile metadata extraction\n")
+	if *productGUID != "" && *opsManagerURL != "" && *username != "" && *password != "" {
+		fmt.Printf("  ✓ Ops Manager API current configuration\n")
+	}
+	fmt.Printf("\nNext phase: Implement comparison logic\n")
 }
 
 func countConfigurable(blueprints []metadata.PropertyBlueprint) int {
