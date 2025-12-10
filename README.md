@@ -16,15 +16,19 @@ This tool automates that analysis by comparing tile metadata and cross-referenci
 
 ✅ **Phase 1 MVP - Complete**
 
-Core extraction and parsing functionality implemented:
-- Extract metadata from .pivotal ZIP archives
-- Parse property_blueprints YAML into Go structs
-- Query Ops Manager API for current configuration
-- Display property counts for validation
+Core extraction and parsing functionality implemented.
 
-🚧 **Phase 2 - In Planning**
+✅ **Phase 2 - Complete**
 
-Next: Implement comparison logic to identify new, removed, and changed properties.
+Property comparison logic implemented:
+- Identify new properties in target version
+- Identify removed properties
+- Detect type and optionality changes
+- Display categorized comparison results
+
+🚧 **Phase 3 - In Planning**
+
+Next: Add current config cross-reference and generate actionable reports.
 
 ## Documentation
 
