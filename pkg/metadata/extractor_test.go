@@ -73,3 +73,54 @@ func TestExtractMetadataInvalidZip(t *testing.T) {
 		t.Error("Expected error for invalid ZIP data")
 	}
 }
+
+func TestParseMetadata(t *testing.T) {
+	yamlData := []byte(`property_blueprints:
+  - name: first_property
+    type: boolean
+    configurable: true
+    optional: false
+  - name: second_property
+    type: integer
+    configurable: true
+    optional: true
+    default: 100
+    constraints:
+      min: 10
+      max: 1000
+`)
+
+	metadata, err := ParseMetadata(yamlData)
+	if err != nil {
+		t.Fatalf("ParseMetadata failed: %v", err)
+	}
+
+	if len(metadata.PropertyBlueprints) != 2 {
+		t.Errorf("Expected 2 properties, got %d", len(metadata.PropertyBlueprints))
+	}
+
+	first := metadata.PropertyBlueprints[0]
+	if first.Name != "first_property" {
+		t.Errorf("Expected name 'first_property', got '%s'", first.Name)
+	}
+	if !first.Configurable {
+		t.Error("Expected first property to be configurable")
+	}
+
+	second := metadata.PropertyBlueprints[1]
+	if second.Name != "second_property" {
+		t.Errorf("Expected name 'second_property', got '%s'", second.Name)
+	}
+	if second.Constraints == nil {
+		t.Error("Expected second property to have constraints")
+	}
+}
+
+func TestParseMetadataInvalid(t *testing.T) {
+	yamlData := []byte(`invalid yaml: [[[`)
+
+	_, err := ParseMetadata(yamlData)
+	if err == nil {
+		t.Error("Expected error for invalid YAML")
+	}
+}
