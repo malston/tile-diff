@@ -19,6 +19,7 @@ type Client struct {
 	password    string
 	httpClient  *http.Client
 	accessToken string
+	useBasicAuth bool
 }
 
 // NewClient creates a new Ops Manager API client
@@ -45,7 +46,7 @@ type uaaTokenResponse struct {
 	TokenType   string `json:"token_type"`
 }
 
-// authenticate gets a UAA access token
+// authenticate gets a UAA access token or falls back to basic auth
 func (c *Client) authenticate() error {
 	tokenURL := fmt.Sprintf("%s/uaa/oauth/token", c.baseURL)
 
@@ -65,9 +66,17 @@ func (c *Client) authenticate() error {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to execute auth request: %w", err)
+		// UAA endpoint not available, fall back to basic auth
+		c.useBasicAuth = true
+		return nil
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		// UAA not available, fall back to basic auth
+		c.useBasicAuth = true
+		return nil
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -86,8 +95,8 @@ func (c *Client) authenticate() error {
 
 // GetProperties retrieves properties for a staged product
 func (c *Client) GetProperties(productGUID string) (*PropertiesResponse, error) {
-	// Authenticate if we don't have a token
-	if c.accessToken == "" {
+	// Authenticate if we don't have a token and not using basic auth
+	if c.accessToken == "" && !c.useBasicAuth {
 		if err := c.authenticate(); err != nil {
 			return nil, fmt.Errorf("failed to authenticate: %w", err)
 		}
@@ -100,7 +109,12 @@ func (c *Client) GetProperties(productGUID string) (*PropertiesResponse, error) 
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	// Use basic auth or bearer token based on what's available
+	if c.useBasicAuth {
+		req.SetBasicAuth(c.username, c.password)
+	} else {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	}
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.httpClient.Do(req)
