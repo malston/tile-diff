@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/malston/tile-diff/pkg/api"
+	"github.com/malston/tile-diff/pkg/compare"
 	"github.com/malston/tile-diff/pkg/metadata"
 )
 
@@ -51,6 +52,47 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("  Found %d properties\n", len(newMetadata.PropertyBlueprints))
+
+	// Compare metadata
+	fmt.Printf("\nComparing tiles...\n")
+	results := compare.CompareMetadata(oldMetadata, newMetadata, true)
+
+	fmt.Printf("\nComparison Results:\n")
+	fmt.Printf("===================\n\n")
+
+	// Display added properties
+	if len(results.Added) > 0 {
+		fmt.Printf("✨ New Properties (%d):\n", len(results.Added))
+		for _, result := range results.Added {
+			fmt.Printf("  + %s (%s)\n", result.PropertyName, result.NewProperty.Type)
+		}
+		fmt.Println()
+	}
+
+	// Display removed properties
+	if len(results.Removed) > 0 {
+		fmt.Printf("🗑️  Removed Properties (%d):\n", len(results.Removed))
+		for _, result := range results.Removed {
+			fmt.Printf("  - %s (%s)\n", result.PropertyName, result.OldProperty.Type)
+		}
+		fmt.Println()
+	}
+
+	// Display changed properties
+	if len(results.Changed) > 0 {
+		fmt.Printf("🔄 Changed Properties (%d):\n", len(results.Changed))
+		for _, result := range results.Changed {
+			fmt.Printf("  ~ %s: %s\n", result.PropertyName, result.Description)
+		}
+		fmt.Println()
+	}
+
+	// Summary
+	fmt.Printf("Summary:\n")
+	fmt.Printf("  Properties in old tile: %d\n", results.TotalOldProps)
+	fmt.Printf("  Properties in new tile: %d\n", results.TotalNewProps)
+	fmt.Printf("  Added: %d, Removed: %d, Changed: %d\n",
+		len(results.Added), len(results.Removed), len(results.Changed))
 
 	// Count configurable properties
 	oldConfigurable := countConfigurable(oldMetadata.PropertyBlueprints)
