@@ -34,8 +34,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("tile-diff Phase 1 MVP\n")
-	fmt.Printf("=====================\n\n")
+	fmt.Printf("tile-diff - Ops Manager Product Tile Comparison\n")
+	fmt.Printf("================================================\n\n")
 
 	// Load old tile metadata
 	fmt.Printf("Loading old tile: %s\n", *oldTile)
@@ -164,17 +164,6 @@ func main() {
 	} else {
 		fmt.Println("\nNote: Provide Ops Manager credentials for actionable report with current config analysis")
 	}
-
-	fmt.Printf("\n%s\n", strings.Repeat("=", 50))
-	fmt.Printf("Phase 1 MVP: Complete ✓\n")
-	fmt.Printf("%s\n\n", strings.Repeat("=", 50))
-	fmt.Printf("Data sources validated:\n")
-	fmt.Printf("  ✓ Old tile metadata extraction\n")
-	fmt.Printf("  ✓ New tile metadata extraction\n")
-	if *productGUID != "" && *opsManagerURL != "" && *username != "" && *password != "" {
-		fmt.Printf("  ✓ Ops Manager API current configuration\n")
-	}
-	fmt.Printf("\nNext phase: Implement comparison logic\n")
 }
 
 func countConfigurable(blueprints []metadata.PropertyBlueprint) int {
