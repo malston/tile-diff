@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/malston/tile-diff/pkg/metadata"
 )
 
 func main() {
@@ -29,17 +31,53 @@ func main() {
 
 	fmt.Printf("tile-diff Phase 1 MVP\n")
 	fmt.Printf("=====================\n\n")
-	fmt.Printf("Old tile: %s\n", *oldTile)
-	fmt.Printf("New tile: %s\n", *newTile)
 
-	if *productGUID != "" {
+	// Load old tile metadata
+	fmt.Printf("Loading old tile: %s\n", *oldTile)
+	oldMetadata, err := metadata.LoadFromFile(*oldTile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading old tile: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("  Found %d properties\n", len(oldMetadata.PropertyBlueprints))
+
+	// Load new tile metadata
+	fmt.Printf("Loading new tile: %s\n", *newTile)
+	newMetadata, err := metadata.LoadFromFile(*newTile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading new tile: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("  Found %d properties\n", len(newMetadata.PropertyBlueprints))
+
+	// Count configurable properties
+	oldConfigurable := countConfigurable(oldMetadata.PropertyBlueprints)
+	newConfigurable := countConfigurable(newMetadata.PropertyBlueprints)
+
+	fmt.Printf("\nConfigurable properties:\n")
+	fmt.Printf("  Old tile: %d\n", oldConfigurable)
+	fmt.Printf("  New tile: %d\n", newConfigurable)
+
+	// API client placeholder
+	if *productGUID != "" && *opsManagerURL != "" {
+		fmt.Printf("\n[Next: Add API client integration]\n")
 		fmt.Printf("Product GUID: %s\n", *productGUID)
 		fmt.Printf("Ops Manager: %s\n", *opsManagerURL)
-		fmt.Printf("Username: %s\n", *username)
-		fmt.Printf("Skip SSL: %t\n", *skipSSL)
-		// Password is intentionally not printed
+		// Keep these to avoid unused variable errors
+		_ = username
 		_ = password
+		_ = skipSSL
 	}
 
-	fmt.Printf("\n[Phase 1 - Next: Add metadata loading]\n")
+	fmt.Printf("\nPhase 1 MVP: Data extraction complete ✓\n")
+}
+
+func countConfigurable(blueprints []metadata.PropertyBlueprint) int {
+	count := 0
+	for _, bp := range blueprints {
+		if bp.Configurable {
+			count++
+		}
+	}
+	return count
 }
