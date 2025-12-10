@@ -65,3 +65,11 @@ func TestExtractMetadataNotFound(t *testing.T) {
 		t.Error("Expected error when metadata.yml not found")
 	}
 }
+
+func TestExtractMetadataInvalidZip(t *testing.T) {
+	// Test with invalid ZIP data
+	_, err := ExtractMetadata([]byte("not a zip file"))
+	if err == nil {
+		t.Error("Expected error for invalid ZIP data")
+	}
+}
