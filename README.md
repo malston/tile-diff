@@ -33,7 +33,17 @@ Next: Add current config cross-reference and generate actionable reports.
 ## Documentation
 
 - [Implementation Specification](docs/2025-12-10-tile-diff-implementation-spec.md)
-- [Phase 1 Implementation Plan](docs/plans/2025-12-10-phase-1-mvp.md)
+
+### Phase 1: Data Extraction & Parsing
+- [Implementation Plan](docs/plans/2025-12-10-phase-1-mvp.md)
+- [Completion Report](docs/phase-1-completion.md)
+
+### Phase 2: Property Comparison Logic
+- [Implementation Plan](docs/plans/2025-12-10-phase-2-comparison.md)
+- [Completion Report](docs/phase-2-completion.md)
+
+### Phase 3: Actionable Reports (In Planning)
+- [Implementation Plan](docs/plans/2025-12-10-phase-3-reports.md)
 
 ## Quick Start
 
