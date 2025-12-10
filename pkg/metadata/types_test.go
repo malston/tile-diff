@@ -1,3 +1,5 @@
+// ABOUTME: Unit tests for tile metadata type definitions.
+// ABOUTME: Validates YAML unmarshaling for property blueprints and selectors.
 package metadata
 
 import (
