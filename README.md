@@ -14,21 +14,15 @@ This tool automates that analysis by comparing tile metadata and cross-referenci
 
 ## Status
 
-✅ **Phase 1 MVP - Complete**
+✅ **Phase 1 Complete** - Extraction & parsing
+✅ **Phase 2 Complete** - Property comparison
+✅ **Phase 3 Complete** - Actionable reports
 
-Core extraction and parsing functionality implemented.
-
-✅ **Phase 2 - Complete**
-
-Property comparison logic implemented:
-- Identify new properties in target version
-- Identify removed properties
-- Detect type and optionality changes
-- Display categorized comparison results
-
-🚧 **Phase 3 - In Planning**
-
-Next: Add current config cross-reference and generate actionable reports.
+Full upgrade analysis with:
+- Current config cross-reference
+- Change categorization (Required/Warning/Info)
+- Formatted reports (text and JSON)
+- Specific recommendations per change
 
 ## Documentation
 
@@ -42,8 +36,9 @@ Next: Add current config cross-reference and generate actionable reports.
 - [Implementation Plan](docs/plans/2025-12-10-phase-2-comparison.md)
 - [Completion Report](docs/phase-2-completion.md)
 
-### Phase 3: Actionable Reports (In Planning)
+### Phase 3: Actionable Reports
 - [Implementation Plan](docs/plans/2025-12-10-phase-3-reports.md)
+- [Completion Report](docs/phase-3-completion.md)
 
 ## Quick Start
 
@@ -55,23 +50,32 @@ make build
 
 ### Usage
 
-Compare two tile versions and see what properties have changed:
-
-```bash
-./tile-diff --old-tile srt-6.0.22.pivotal --new-tile srt-10.2.5.pivotal
-```
-
-Include current Ops Manager configuration for validation:
+#### Compare Tiles with Actionable Report
 
 ```bash
 ./tile-diff \
   --old-tile srt-6.0.22.pivotal \
   --new-tile srt-10.2.5.pivotal \
-  --product-guid cf-85da7fd88e99806e5d08 \
+  --product-guid cf-xxxxx \
   --ops-manager-url https://opsman.tas.vcf.lab \
   --username admin \
   --password your-password \
   --skip-ssl-validation
+```
+
+#### JSON Output
+
+```bash
+./tile-diff \
+  --old-tile srt-6.0.22.pivotal \
+  --new-tile srt-10.2.5.pivotal \
+  --format json
+```
+
+#### Basic Comparison (without current config)
+
+```bash
+./tile-diff --old-tile srt-6.0.22.pivotal --new-tile srt-10.2.5.pivotal
 ```
 
 ### Example Output
