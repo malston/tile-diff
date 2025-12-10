@@ -1,10 +1,10 @@
 # tile-diff
 
-A command-line tool to compare Tanzu Application Service (TAS) tile configurations between versions, identifying configuration changes required during upgrades.
+A command-line tool to compare Ops Manager product tile configurations between versions, identifying configuration changes required during upgrades.
 
 ## Overview
 
-When upgrading TAS tiles (e.g., from 6.0.22 to 10.2.5), operators need to understand:
+When upgrading product tiles (e.g., TAS from 6.0.22 to 10.2.5), operators need to understand:
 - What new configuration properties must be set
 - What existing properties are no longer supported
 - What properties have changed constraints or defaults
@@ -102,7 +102,7 @@ Next phase: Implement comparison logic
 
 - Go 1.21+
 - `om` CLI (Ops Manager CLI)
-- Access to TAS tile `.pivotal` files
+- Access to product tile `.pivotal` files
 - Access to Ops Manager API (for current config comparison)
 
 ### Setup
