@@ -67,3 +67,49 @@ func TestFindNewPropertiesNone(t *testing.T) {
 		t.Errorf("Expected no new properties, got %d", len(results))
 	}
 }
+
+func TestFindRemovedProperties(t *testing.T) {
+	oldProps := map[string]metadata.PropertyBlueprint{
+		"existing_prop": {
+			Name:         "existing_prop",
+			Type:         "string",
+			Configurable: true,
+		},
+		"removed_prop": {
+			Name:         "removed_prop",
+			Type:         "boolean",
+			Configurable: true,
+		},
+		"removed_system_prop": {
+			Name:         "removed_system_prop",
+			Type:         "string",
+			Configurable: false,
+		},
+	}
+
+	newProps := map[string]metadata.PropertyBlueprint{
+		"existing_prop": {
+			Name:         "existing_prop",
+			Type:         "string",
+			Configurable: true,
+		},
+	}
+
+	// Test: find all removed properties
+	allRemoved := FindRemovedProperties(oldProps, newProps, false)
+	if len(allRemoved) != 2 {
+		t.Errorf("Expected 2 removed properties, got %d", len(allRemoved))
+	}
+
+	// Test: find only configurable removed properties
+	configurableRemoved := FindRemovedProperties(oldProps, newProps, true)
+	if len(configurableRemoved) != 1 {
+		t.Errorf("Expected 1 configurable removed property, got %d", len(configurableRemoved))
+	}
+	if configurableRemoved[0].PropertyName != "removed_prop" {
+		t.Errorf("Expected removed_prop, got %s", configurableRemoved[0].PropertyName)
+	}
+	if configurableRemoved[0].ChangeType != PropertyRemoved {
+		t.Errorf("Expected ChangeType PropertyRemoved, got %v", configurableRemoved[0].ChangeType)
+	}
+}
