@@ -53,15 +53,15 @@ Next: Add current config cross-reference and generate actionable reports.
 make build
 ```
 
-### Run Phase 1 MVP
+### Usage
 
-Compare two tile versions (metadata only):
+Compare two tile versions and see what properties have changed:
 
 ```bash
 ./tile-diff --old-tile srt-6.0.22.pivotal --new-tile srt-10.2.5.pivotal
 ```
 
-Include current Ops Manager configuration:
+Include current Ops Manager configuration for validation:
 
 ```bash
 ./tile-diff \
@@ -77,33 +77,39 @@ Include current Ops Manager configuration:
 ### Example Output
 
 ```
-tile-diff Phase 1 MVP
-=====================
+tile-diff - Ops Manager Product Tile Comparison
+================================================
 
 Loading old tile: srt-6.0.22.pivotal
-  Found 450 properties
+  Found 274 properties (184 configurable)
 Loading new tile: srt-10.2.5.pivotal
-  Found 520 properties
+  Found 272 properties (182 configurable)
 
-Configurable properties:
-  Old tile: 422
-  New tile: 485
+Comparing tiles...
 
-Querying Ops Manager API...
-  Found 599 total properties
-  Configurable: 422
-  Currently configured: ~156
+Comparison Results:
+===================
 
-==================================================
-Phase 1 MVP: Complete ✓
-==================================================
+✨ New Properties (15):
+  + .properties.new_feature_flag (boolean)
+  + .properties.enhanced_logging_level (string)
+  + .properties.retry_configuration (integer)
+  ...
 
-Data sources validated:
-  ✓ Old tile metadata extraction
-  ✓ New tile metadata extraction
-  ✓ Ops Manager API current configuration
+🗑️  Removed Properties (8):
+  - .properties.deprecated_setting (boolean)
+  - .properties.legacy_timeout (integer)
+  ...
 
-Next phase: Implement comparison logic
+🔄 Changed Properties (5):
+  ~ .properties.memory_limit: Type changed from string to integer
+  ~ .properties.optional_field: Now required (was optional)
+  ...
+
+Summary:
+  Properties in old tile: 274 (184 configurable)
+  Properties in new tile: 272 (182 configurable)
+  Added: 15, Removed: 8, Changed: 5
 ```
 
 ## Development
