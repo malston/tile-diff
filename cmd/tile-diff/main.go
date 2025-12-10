@@ -11,6 +11,7 @@ import (
 	"github.com/malston/tile-diff/pkg/api"
 	"github.com/malston/tile-diff/pkg/compare"
 	"github.com/malston/tile-diff/pkg/metadata"
+	"github.com/malston/tile-diff/pkg/report"
 )
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 	username := flag.String("username", "", "Ops Manager username (optional)")
 	password := flag.String("password", "", "Ops Manager password (optional)")
 	skipSSL := flag.Bool("skip-ssl-validation", false, "Skip SSL certificate validation")
+	reportFormat := flag.String("format", "text", "Output format: text or json")
 
 	flag.Parse()
 
@@ -132,10 +134,35 @@ func main() {
 			}
 		}
 		fmt.Printf("  Currently configured: ~%d\n", configured)
+
+		// Generate actionable report
+		fmt.Printf("\nGenerating actionable report...\n")
+
+		// Parse current config
+		currentConfig := report.ParseCurrentConfig(properties)
+
+		// Filter relevant changes
+		filtered := report.FilterRelevantChanges(results, currentConfig)
+
+		// Categorize changes
+		categorized := report.CategorizeChanges(filtered)
+
+		// Generate report based on format
+		fmt.Println()
+		switch *reportFormat {
+		case "json":
+			jsonReport := report.GenerateJSONReport(categorized, *oldTile, *newTile)
+			fmt.Println(jsonReport)
+		default:
+			textReport := report.GenerateTextReport(categorized, *oldTile, *newTile)
+			fmt.Println(textReport)
+		}
 	} else if *productGUID != "" {
 		fmt.Printf("\nSkipping Ops Manager API (credentials not provided)\n")
 		fmt.Printf("To include current configuration, provide:\n")
 		fmt.Printf("  --ops-manager-url, --username, --password\n")
+	} else {
+		fmt.Println("\nNote: Provide Ops Manager credentials for actionable report with current config analysis")
 	}
 
 	fmt.Printf("\n%s\n", strings.Repeat("=", 50))
