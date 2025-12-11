@@ -77,12 +77,23 @@ func TestDetermineCategory(t *testing.T) {
 		expected   Category
 	}{
 		{
-			name: "new required property",
+			name: "new required property without default",
 			change: compare.ComparisonResult{
 				ChangeType:  compare.PropertyAdded,
 				NewProperty: &metadata.PropertyBlueprint{Optional: false},
 			},
 			expected: CategoryRequired,
+		},
+		{
+			name: "new required property with default",
+			change: compare.ComparisonResult{
+				ChangeType:  compare.PropertyAdded,
+				NewProperty: &metadata.PropertyBlueprint{
+					Optional: false,
+					Default:  true,
+				},
+			},
+			expected: CategoryInformational,
 		},
 		{
 			name: "new optional property",

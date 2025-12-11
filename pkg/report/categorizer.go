@@ -77,8 +77,8 @@ func CategorizeChanges(changes *compare.ComparisonResults) *CategorizedChanges {
 func determineCategory(change compare.ComparisonResult) Category {
 	switch change.ChangeType {
 	case compare.PropertyAdded:
-		// Required if not optional
-		if change.NewProperty != nil && !change.NewProperty.Optional {
+		// Required if not optional AND no default
+		if change.NewProperty != nil && !change.NewProperty.Optional && change.NewProperty.Default == nil {
 			return CategoryRequired
 		}
 		return CategoryInformational

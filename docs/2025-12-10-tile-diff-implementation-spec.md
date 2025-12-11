@@ -11,6 +11,7 @@ This document specifies a tool to compare Tanzu Application Service (TAS) tile c
 ### Problem Statement
 
 When upgrading TAS tiles (e.g., from 6.0.22 to 10.2.5), operators need to know:
+
 - What new configuration properties must be set
 - What existing properties are no longer supported
 - What properties have changed constraints or defaults
@@ -21,6 +22,7 @@ Currently, this analysis is manual and error-prone, often resulting in missed co
 ### Solution Overview
 
 A command-line tool that:
+
 1. Extracts property schemas from both old and new tile `.pivotal` files
 2. Retrieves current effective configuration from Ops Manager
 3. Performs semantic comparison to identify actionable changes
@@ -37,6 +39,7 @@ A command-line tool that:
 **Key Section:** `property_blueprints` (top-level, starting around line 8543 in sample)
 
 **Structure:**
+
 ```yaml
 property_blueprints:
   - name: property_name
@@ -54,11 +57,13 @@ property_blueprints:
 ```
 
 **Access Method:**
+
 ```bash
 unzip -p /path/to/tile.pivotal metadata/metadata.yml > metadata.yml
 ```
 
 **Key Fields:**
+
 - `name`: Property identifier (e.g., `allow_srt_to_ert_upgrade`)
 - `type`: Data type
 - `configurable`: Whether user can modify (we focus on `true`)
@@ -74,6 +79,7 @@ unzip -p /path/to/tile.pivotal metadata/metadata.yml > metadata.yml
 **Authentication:** Via `om` CLI with credentials from `.envrc`
 
 **Structure:**
+
 ```json
 {
   "properties": {
@@ -96,6 +102,7 @@ unzip -p /path/to/tile.pivotal metadata/metadata.yml > metadata.yml
 ```
 
 **Access Method:**
+
 ```bash
 source .envrc
 PRODUCT_GUID=$(om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="cf") | .guid')
@@ -103,6 +110,7 @@ om curl -p /api/v0/staged/products/${PRODUCT_GUID}/properties > current-config.j
 ```
 
 **Key Differences from Metadata:**
+
 - Properties prefixed with `.properties.`, `.cloud_controller.`, etc.
 - Contains actual `value` (not just schema)
 - Shows `credential: true` for sensitive fields (values obscured as `***`)
@@ -113,11 +121,13 @@ om curl -p /api/v0/staged/products/${PRODUCT_GUID}/properties > current-config.j
 **Challenge:** Metadata uses property names (e.g., `allow_srt_to_ert_upgrade`), but API uses full paths (e.g., `.properties.allow_srt_to_ert_upgrade`).
 
 **Solution:** Build path mapping by:
+
 1. Parsing metadata to identify property locations (top-level vs nested in selectors)
 2. Constructing full paths based on nesting
 3. Matching against API response keys
 
 **Path Patterns:**
+
 - Top-level properties: `.properties.{name}`
 - Job-specific properties: `.{job_name}.{name}` (e.g., `.cloud_controller.system_domain`)
 - Selector sub-properties: `.properties.{selector_name}.{option_name}.{sub_property_name}`
@@ -381,6 +391,7 @@ product-properties:
 **Goal:** Extract and parse data sources
 
 **Tasks:**
+
 1. Extract metadata.yml from .pivotal files (both versions)
 2. Parse property_blueprints section
 3. Query Ops Manager API for current configuration
@@ -389,6 +400,7 @@ product-properties:
 **Deliverable:** Python script that can read all three data sources
 
 **Validation:**
+
 - Successfully parse metadata from sample tiles
 - Successfully query API and parse JSON
 - Print property counts to verify completeness
@@ -398,6 +410,7 @@ product-properties:
 **Goal:** Identify new, removed, and changed properties
 
 **Tasks:**
+
 1. Compare old vs new schemas (set operations)
 2. Identify new properties (in new, not in old)
 3. Identify removed properties (in old, not in new)
@@ -406,6 +419,7 @@ product-properties:
 **Deliverable:** Script outputs three lists: new, removed, changed
 
 **Validation:**
+
 - Manual review of changes against known differences
 - Verify no false positives/negatives
 
@@ -414,6 +428,7 @@ product-properties:
 **Goal:** Filter changes to only those affecting current configuration
 
 **Tasks:**
+
 1. Check which removed properties are actually used
 2. Validate current values against new constraints
 3. Identify which new required properties need user input
@@ -421,6 +436,7 @@ product-properties:
 **Deliverable:** Filtered change lists with context
 
 **Validation:**
+
 - Verify warnings only appear for actually-used properties
 - Confirm required actions list is complete
 
@@ -429,6 +445,7 @@ product-properties:
 **Goal:** Generate human-readable and machine-readable reports
 
 **Tasks:**
+
 1. Categorize changes (required/warning/informational)
 2. Format text report with sections
 3. Generate JSON output option
@@ -437,6 +454,7 @@ product-properties:
 **Deliverable:** Tool produces formatted reports
 
 **Validation:**
+
 - Review report with real tile upgrade scenario
 - Verify completeness and clarity
 
@@ -445,6 +463,7 @@ product-properties:
 **Goal:** Production-ready tool
 
 **Tasks:**
+
 1. Add command-line argument parsing
 2. Error handling and validation
 3. Progress indicators for long operations
@@ -462,6 +481,7 @@ product-properties:
 **Challenge:** Metadata uses simple names, API uses full paths
 
 **Solution:**
+
 - Build path map from metadata structure
 - Handle common prefixes: `.properties.`, `.{job_name}.`
 - For selectors, track nested paths with option names
@@ -473,6 +493,7 @@ product-properties:
 **Challenge:** Selectors have nested properties per option
 
 **Solution:**
+
 - Track currently selected option from API
 - Only compare properties for selected option
 - Warn if selected option removed in new version
@@ -484,6 +505,7 @@ product-properties:
 **Challenge:** API returns `***` for credential values
 
 **Solution:**
+
 - Flag credential properties but don't include values in reports
 - Assume credentials remain valid unless type/constraints changed
 - Note that credentials may need re-entry if property is new
@@ -495,6 +517,7 @@ product-properties:
 **Challenge:** Many system-managed properties in metadata
 
 **Solution:**
+
 - Filter out `configurable: false` properties early
 - Focus only on user-modifiable properties
 - Reduces noise in reports
@@ -506,6 +529,7 @@ product-properties:
 **Challenge:** Distinguishing user-set vs default values
 
 **Solution:**
+
 - Compare current value to old default
 - If matches old default AND new default differs → Note but don't warn
 - If doesn't match old default → User explicitly set it
@@ -517,6 +541,7 @@ product-properties:
 **Challenge:** Ops Manager may have multiple cf products
 
 **Solution:**
+
 - Accept product GUID as input
 - Provide helper command to list available products
 - Auto-detect if only one cf product exists
@@ -528,6 +553,7 @@ product-properties:
 **Challenge:** Can't get current config if tile not staged
 
 **Solution:**
+
 - Make current config optional
 - Allow comparison without current config (schema-only diff)
 - Clearly indicate when current config unavailable
@@ -539,6 +565,7 @@ product-properties:
 **Challenge:** metadata.yml can be 600KB+
 
 **Solution:**
+
 - Stream parsing for large YAML files
 - Only load property_blueprints section
 - Consider caching parsed metadata
@@ -554,6 +581,7 @@ product-properties:
 **Scope:** Core comparison logic
 
 **Tests:**
+
 1. Property schema parsing from YAML
 2. API response parsing from JSON
 3. New property detection
@@ -569,6 +597,7 @@ product-properties:
 **Scope:** End-to-end with real data
 
 **Tests:**
+
 1. Extract metadata from real .pivotal files
 2. Query real Ops Manager API (test environment)
 3. Generate report for known upgrade path
@@ -581,6 +610,7 @@ product-properties:
 **Scope:** Report quality and usability
 
 **Tests:**
+
 1. Run on real upgrade scenario (6.0.22 → 10.2.5)
 2. Verify all changes match release notes
 3. Check for false positives/negatives
@@ -603,6 +633,7 @@ tile-diff compare \
 ```
 
 **Arguments:**
+
 - `--old-tile`: Path to current version .pivotal file (required)
 - `--new-tile`: Path to target version .pivotal file (required)
 - `--current-config`: Path to JSON file from API (optional)
@@ -795,7 +826,7 @@ This tool is successful if:
 
 ## Appendix C: References
 
-- **Ops Manager API Docs**: https://opsman.tas.vcf.lab/docs/
-- **om CLI**: https://github.com/pivotal-cf/om
-- **TAS Release Notes**: https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-platform-for-cloud-foundry/
-- **BOSH Metadata Format**: https://bosh.io/docs/
+- **Ops Manager API Docs**: <https://opsman.tas.vcf.lab/docs/>
+- **om CLI**: <https://github.com/pivotal-cf/om>
+- **TAS Release Notes**: <https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-platform-for-cloud-foundry/>
+- **BOSH Metadata Format**: <https://bosh.io/docs/>
