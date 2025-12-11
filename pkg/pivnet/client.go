@@ -126,6 +126,17 @@ func (c *Client) GetProductFiles(productSlug string, releaseID int) ([]ProductFi
 	return result, nil
 }
 
+// GetProductFileSize gets the size of a specific product file
+func (c *Client) GetProductFileSize(productSlug string, releaseID, fileID int) (int64, error) {
+	// Get individual file metadata which includes the actual size
+	pf, err := c.pivnetClient.ProductFiles.GetForRelease(productSlug, releaseID, fileID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get file metadata: %w", err)
+	}
+
+	return int64(pf.Size), nil
+}
+
 // AcceptEULA accepts the EULA for a release
 func (c *Client) AcceptEULA(productSlug string, releaseID int) error {
 	return c.pivnetClient.EULA.Accept(productSlug, releaseID)

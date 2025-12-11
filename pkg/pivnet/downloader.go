@@ -164,8 +164,14 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 		}
 	}
 
+	// Get actual file size (ListForRelease doesn't return sizes)
+	fileSize, err := d.client.GetProductFileSize(opts.ProductSlug, release.ID, selectedFile.ID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get file size: %w", err)
+	}
+
 	// Download file
-	fmt.Printf("Downloading %s (%s)...\n", selectedFile.Name, formatBytes(selectedFile.Size))
+	fmt.Printf("Downloading %s (%s)...\n", selectedFile.Name, formatBytes(fileSize))
 
 	targetPath := filepath.Join(opts.CacheDir, filepath.Base(selectedFile.AWSObjectKey))
 	if err := os.MkdirAll(opts.CacheDir, 0755); err != nil {
@@ -174,7 +180,7 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 
 	// Download to temp file first
 	tempPath := targetPath + ".tmp"
-	err = d.downloadFile(opts.ProductSlug, release.ID, selectedFile.ID, tempPath, selectedFile.Size)
+	err = d.downloadFile(opts.ProductSlug, release.ID, selectedFile.ID, tempPath, fileSize)
 	if err != nil {
 		os.Remove(tempPath)
 		return "", err
@@ -187,7 +193,7 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 	}
 
 	// Add to cache
-	d.cache.Add(opts.ProductSlug, release.Version, selectedFile.ID, targetPath, selectedFile.Size)
+	d.cache.Add(opts.ProductSlug, release.Version, selectedFile.ID, targetPath, fileSize)
 
 	// Mark EULA as accepted now that download succeeded
 	// (If it wasn't already marked via API acceptance)
