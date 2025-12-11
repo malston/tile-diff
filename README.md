@@ -28,19 +28,9 @@ Full upgrade analysis with:
 
 ## Documentation
 
-- [Implementation Specification](docs/2025-12-10-tile-diff-implementation-spec.md)
-
-### Phase 1: Data Extraction & Parsing
-- [Implementation Plan](docs/plans/2025-12-10-phase-1-mvp.md)
-- [Completion Report](docs/phase-1-completion.md)
-
-### Phase 2: Property Comparison Logic
-- [Implementation Plan](docs/plans/2025-12-10-phase-2-comparison.md)
-- [Completion Report](docs/phase-2-completion.md)
-
-### Phase 3: Actionable Reports
-- [Implementation Plan](docs/plans/2025-12-10-phase-3-reports.md)
-- [Completion Report](docs/phase-3-completion.md)
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Get up and running in 5 minutes
+- **[User Guide](docs/USER_GUIDE.md)** - Comprehensive usage documentation
+- **[Examples](docs/EXAMPLES.md)** - Real-world scenarios and use cases
 
 ## Quick Start
 
