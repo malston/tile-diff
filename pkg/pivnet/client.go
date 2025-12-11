@@ -1,114 +1,65 @@
-// ABOUTME: Pivnet API client using standard HTTP calls.
+// ABOUTME: Pivnet API client using go-pivnet SDK.
 // ABOUTME: Provides methods for fetching releases, product files, and downloading files.
 package pivnet
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"net/http"
-	"strings"
+	"log"
+	"os"
+
+	"github.com/pivotal-cf/go-pivnet/v7"
+	"github.com/pivotal-cf/go-pivnet/v7/download"
+	"github.com/pivotal-cf/go-pivnet/v7/logshim"
 )
 
-const defaultPivnetHost = "https://network.tanzu.vmware.com"
-
-// Client wraps HTTP client for Pivnet API calls
+// Client wraps go-pivnet SDK client
 type Client struct {
-	token      string
-	httpClient *http.Client
-	baseURL    string
+	pivnetClient pivnet.Client
 }
 
-// pivnetRelease represents a release from the API
-type pivnetRelease struct {
-	ID      int    `json:"id"`
-	Version string `json:"version"`
-}
-
-// pivnetReleasesResponse represents the releases list response
-type pivnetReleasesResponse struct {
-	Releases []pivnetRelease `json:"releases"`
-}
-
-// pivnetProductFile represents a product file from the API
-type pivnetProductFile struct {
-	ID           int    `json:"id"`
-	Name         string `json:"name"`
-	AWSObjectKey string `json:"aws_object_key"`
-	Size         int    `json:"size"`
-}
-
-// pivnetProductFilesResponse represents the product files list response
-type pivnetProductFilesResponse struct {
-	ProductFiles []pivnetProductFile `json:"product_files"`
-}
-
-// pivnetDownloadResponse represents the download endpoint response
-type pivnetDownloadResponse struct {
-	URL string `json:"url"`
-}
-
-// NewClient creates a new Pivnet client
+// NewClient creates a new Pivnet client using the SDK
 func NewClient(token string) (*Client, error) {
 	if token == "" {
-		return nil, errors.New("pivnet token cannot be empty")
+		return nil, fmt.Errorf("pivnet token cannot be empty")
 	}
 
-	// Warn about legacy tokens
-	if len(token) <= 32 {
-		fmt.Printf("\n⚠️  Warning: Your Pivnet token appears to be a legacy format (%d chars).\n", len(token))
-		fmt.Printf("Legacy tokens don't support all API endpoints (especially downloads).\n")
-		fmt.Printf("Please get a new UAA token from the Broadcom Support Portal:\n")
-		fmt.Printf("https://support.broadcom.com/\n\n")
+	// Use SDK's token service that handles both legacy and UAA tokens
+	config := pivnet.ClientConfig{
+		Host:      "https://network.tanzu.vmware.com",
+		UserAgent: "tile-diff",
 	}
+
+	// Create logger (discard output - we handle our own logging)
+	stdout := log.New(io.Discard, "", 0)
+	stderr := log.New(io.Discard, "", 0)
+	logger := logshim.NewLogShim(stdout, stderr, false)
+
+	// Create token service that handles both legacy and UAA tokens
+	tokenService := pivnet.NewAccessTokenOrLegacyToken(
+		token,
+		config.Host,
+		false, // skipSSL
+		config.UserAgent,
+	)
+
+	// Create SDK client
+	pivnetClient := pivnet.NewClient(tokenService, config, logger)
 
 	return &Client{
-		token:      token,
-		httpClient: &http.Client{},
-		baseURL:    defaultPivnetHost,
+		pivnetClient: pivnetClient,
 	}, nil
-}
-
-// doRequest performs an authenticated HTTP request
-func (c *Client) doRequest(method, path string) (*http.Response, error) {
-	req, err := http.NewRequest(method, c.baseURL+path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+c.token)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		defer resp.Body.Close()
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	return resp, nil
 }
 
 // GetReleases fetches all releases for a product
 func (c *Client) GetReleases(productSlug string) ([]Release, error) {
-	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v2/products/%s/releases", productSlug))
+	releases, err := c.pivnetClient.Releases.List(productSlug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list releases for %s: %w", productSlug, err)
 	}
-	defer resp.Body.Close()
 
-	var releasesResp pivnetReleasesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&releasesResp); err != nil {
-		return nil, fmt.Errorf("failed to decode releases response: %w", err)
-	}
-
-	result := make([]Release, len(releasesResp.Releases))
-	for i, r := range releasesResp.Releases {
+	result := make([]Release, len(releases))
+	for i, r := range releases {
 		result[i] = Release{
 			ID:      r.ID,
 			Version: r.Version,
@@ -136,26 +87,37 @@ func (c *Client) GetRelease(productSlug, version string) (*Release, error) {
 
 // GetProductFiles fetches product files for a release
 func (c *Client) GetProductFiles(productSlug string, releaseID int) ([]ProductFile, error) {
-	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v2/products/%s/releases/%d/product_files", productSlug, releaseID))
+	// Get product files from the release
+	productFiles, err := c.pivnetClient.ProductFiles.ListForRelease(productSlug, releaseID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list product files for release %d: %w", releaseID, err)
-	}
-	defer resp.Body.Close()
-
-	var filesResp pivnetProductFilesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&filesResp); err != nil {
-		return nil, fmt.Errorf("failed to decode product files response: %w", err)
+		return nil, fmt.Errorf("failed to list product files: %w", err)
 	}
 
-	result := make([]ProductFile, 0)
-	for _, f := range filesResp.ProductFiles {
-		// Only include .pivotal files
-		if len(f.AWSObjectKey) > 8 && f.AWSObjectKey[len(f.AWSObjectKey)-8:] == ".pivotal" {
+	// Also get files from file groups (some products organize files this way)
+	fileGroups, err := c.pivnetClient.FileGroups.ListForRelease(productSlug, releaseID)
+	if err != nil {
+		// File groups are optional, don't fail if they don't exist
+		fileGroups = []pivnet.FileGroup{}
+	}
+
+	// Combine files from file groups
+	for _, fg := range fileGroups {
+		productFiles = append(productFiles, fg.ProductFiles...)
+	}
+
+	if len(productFiles) == 0 {
+		return nil, fmt.Errorf("no product files found for release")
+	}
+
+	result := make([]ProductFile, 0, len(productFiles))
+	for _, pf := range productFiles {
+		// Only include files that are actual tiles (not docs, etc)
+		if pf.FileType == "Software" || pf.AWSObjectKey != "" {
 			result = append(result, ProductFile{
-				ID:           f.ID,
-				Name:         f.Name,
-				AWSObjectKey: f.AWSObjectKey,
-				Size:         int64(f.Size),
+				ID:           pf.ID,
+				Name:         pf.Name,
+				AWSObjectKey: pf.AWSObjectKey,
+				Size:         int64(pf.Size),
 			})
 		}
 	}
@@ -165,95 +127,35 @@ func (c *Client) GetProductFiles(productSlug string, releaseID int) ([]ProductFi
 
 // AcceptEULA accepts the EULA for a release
 func (c *Client) AcceptEULA(productSlug string, releaseID int) error {
-	// First, get the EULA ID for this release
-	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v2/products/%s/releases/%d", productSlug, releaseID))
-	if err != nil {
-		return fmt.Errorf("failed to get release details: %w", err)
-	}
-	defer resp.Body.Close()
-
-	var releaseData struct {
-		EULA struct {
-			ID int `json:"id"`
-		} `json:"eula"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&releaseData); err != nil {
-		return fmt.Errorf("failed to decode release response: %w", err)
-	}
-
-	// Accept the EULA
-	req, err := http.NewRequest("POST", c.baseURL+fmt.Sprintf("/api/v2/products/%s/releases/%d/pivnet_resource_eula_acceptance", productSlug, releaseID), strings.NewReader("{}"))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+c.token)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-
-	resp2, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to accept EULA: %w", err)
-	}
-	defer resp2.Body.Close()
-
-	if resp2.StatusCode < 200 || resp2.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp2.Body)
-		return fmt.Errorf("EULA acceptance failed with status %d: %s", resp2.StatusCode, string(body))
-	}
-
-	return nil
+	return c.pivnetClient.EULA.Accept(productSlug, releaseID)
 }
 
 // DownloadFile downloads a product file
 func (c *Client) DownloadFile(productSlug string, releaseID, fileID int, writer io.Writer) error {
-	// Get product file metadata to extract download link
-	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v2/products/%s/releases/%d/product_files/%d", productSlug, releaseID, fileID))
+	// The SDK expects an *os.File for download, but we need to write to an io.Writer
+	// We'll need to handle this by using a temp file or direct stream
+	// For now, check if writer is already an *os.File
+	file, ok := writer.(*os.File)
+	if !ok {
+		return fmt.Errorf("writer must be an *os.File for SDK download")
+	}
+
+	// Create file info for the download
+	fileInfo, err := download.NewFileInfo(file)
 	if err != nil {
-		return fmt.Errorf("failed to get product file metadata: %w", err)
-	}
-	defer resp.Body.Close()
-
-	var fileData struct {
-		Links struct {
-			Download struct {
-				Href string `json:"href"`
-			} `json:"download"`
-		} `json:"_links"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&fileData); err != nil {
-		return fmt.Errorf("failed to decode product file response: %w", err)
+		return fmt.Errorf("failed to create file info: %w", err)
 	}
 
-	if fileData.Links.Download.Href == "" {
-		return fmt.Errorf("no download link found in response")
-	}
-
-	// Download the file from the download link
-	downloadReq, err := http.NewRequest("GET", fileData.Links.Download.Href, nil)
+	// Download using SDK
+	err = c.pivnetClient.ProductFiles.DownloadForRelease(
+		fileInfo,
+		productSlug,
+		releaseID,
+		fileID,
+		io.Discard, // progress writer - we handle progress elsewhere
+	)
 	if err != nil {
-		return fmt.Errorf("failed to create download request: %w", err)
-	}
-
-	// Add authorization header for the download
-	downloadReq.Header.Set("Authorization", "Bearer "+c.token)
-	downloadReq.Header.Set("Accept", "application/json")
-
-	downloadResp, err := c.httpClient.Do(downloadReq)
-	if err != nil {
-		return fmt.Errorf("failed to download file: %w", err)
-	}
-	defer downloadResp.Body.Close()
-
-	if downloadResp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(downloadResp.Body)
-		return fmt.Errorf("download failed with status %d: %s", downloadResp.StatusCode, string(body))
-	}
-
-	// Copy the file content to the writer
-	_, err = io.Copy(writer, downloadResp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
+		return fmt.Errorf("download failed: %w", err)
 	}
 
 	return nil
