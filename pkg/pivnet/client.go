@@ -130,29 +130,21 @@ func (c *Client) AcceptEULA(productSlug string, releaseID int) error {
 	return c.pivnetClient.EULA.Accept(productSlug, releaseID)
 }
 
-// DownloadFile downloads a product file
-func (c *Client) DownloadFile(productSlug string, releaseID, fileID int, writer io.Writer) error {
-	// The SDK expects an *os.File for download, but we need to write to an io.Writer
-	// We'll need to handle this by using a temp file or direct stream
-	// For now, check if writer is already an *os.File
-	file, ok := writer.(*os.File)
-	if !ok {
-		return fmt.Errorf("writer must be an *os.File for SDK download")
-	}
-
+// DownloadFile downloads a product file with progress tracking
+func (c *Client) DownloadFile(productSlug string, releaseID, fileID int, file *os.File, progressWriter io.Writer) error {
 	// Create file info for the download
 	fileInfo, err := download.NewFileInfo(file)
 	if err != nil {
 		return fmt.Errorf("failed to create file info: %w", err)
 	}
 
-	// Download using SDK
+	// Download using SDK with progress tracking
 	err = c.pivnetClient.ProductFiles.DownloadForRelease(
 		fileInfo,
 		productSlug,
 		releaseID,
 		fileID,
-		io.Discard, // progress writer - we handle progress elsewhere
+		progressWriter,
 	)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)

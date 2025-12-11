@@ -4,7 +4,6 @@ package pivnet
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -204,11 +203,8 @@ func (d *Downloader) downloadFile(productSlug string, releaseID, fileID int, tar
 		"downloading",
 	)
 
-	// Create a multi-writer that writes to both file and progress bar
-	multiWriter := io.MultiWriter(out, bar)
-
-	// Download file
-	err = d.client.DownloadFile(productSlug, releaseID, fileID, multiWriter)
+	// Download file - SDK expects *os.File and a separate progress writer
+	err = d.client.DownloadFile(productSlug, releaseID, fileID, out, bar)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
