@@ -1,3 +1,5 @@
+// ABOUTME: Unit tests for product registry and URL resolution
+// ABOUTME: Validates config loading and version substitution in URLs
 package releasenotes
 
 import (
