@@ -65,8 +65,9 @@ func TestKeywordMatch(t *testing.T) {
 		t.Errorf("Expected keyword match, got %s", match.MatchType)
 	}
 
-	if match.Confidence < 0.5 {
-		t.Errorf("Expected confidence >= 0.5, got %f", match.Confidence)
+	expectedConfidence := 0.9
+	if match.Confidence != expectedConfidence {
+		t.Errorf("Expected confidence %f, got %f", expectedConfidence, match.Confidence)
 	}
 }
 
@@ -90,6 +91,11 @@ func TestTokenizeProperty(t *testing.T) {
 			tokens := tokenizeProperty(tt.property)
 			if len(tokens) != len(tt.expected) {
 				t.Errorf("Expected %d tokens, got %d", len(tt.expected), len(tokens))
+			}
+			for i, token := range tokens {
+				if i >= len(tt.expected) || token != tt.expected[i] {
+					t.Errorf("Token %d: expected %q, got %q", i, tt.expected[i], token)
+				}
 			}
 		})
 	}
