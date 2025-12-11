@@ -45,8 +45,14 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 
 	// Handle multiple matches
 	if result.Selected == nil {
-		// TODO: Interactive selection will be added in Task 9
-		return "", fmt.Errorf("multiple releases found - interactive selection not yet implemented")
+		if opts.NonInteractive {
+			return "", fmt.Errorf("multiple releases match - use exact version in non-interactive mode")
+		}
+		selected, err := PromptForRelease(result.Matches)
+		if err != nil {
+			return "", err
+		}
+		result.Selected = selected
 	}
 
 	release := result.Selected
@@ -75,8 +81,19 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 			return "", fmt.Errorf("product file '%s' not found", opts.ProductFile)
 		}
 	} else {
-		// Use first file (TODO: Add interactive selection in Task 9)
-		selectedFile = &productFiles[0]
+		if opts.NonInteractive {
+			if len(productFiles) > 1 {
+				return "", fmt.Errorf("multiple product files found - specify --product-file in non-interactive mode")
+			}
+			selectedFile = &productFiles[0]
+		} else {
+			// Interactive selection
+			selected, err := PromptForProductFile(productFiles)
+			if err != nil {
+				return "", err
+			}
+			selectedFile = selected
+		}
 	}
 
 	// Check cache
@@ -88,18 +105,26 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 
 	// Check EULA
 	if !d.eula.IsAccepted(opts.ProductSlug) {
+		eulaURL := fmt.Sprintf("https://network.pivotal.io/products/%s/releases/%d", opts.ProductSlug, release.ID)
+
 		if !opts.AcceptEULA {
 			if opts.NonInteractive {
 				return "", fmt.Errorf("EULA not accepted for %s (use --accept-eula)", opts.ProductSlug)
 			}
-			// TODO: Interactive EULA prompt in Task 9
-			return "", fmt.Errorf("EULA acceptance required - interactive prompt not yet implemented")
+			// Interactive EULA prompt
+			accepted, err := PromptForEULA(opts.ProductSlug, release.Version, eulaURL)
+			if err != nil {
+				return "", err
+			}
+			if !accepted {
+				return "", fmt.Errorf("EULA not accepted")
+			}
 		}
+
 		// Accept EULA via API
 		if err := d.client.AcceptEULA(opts.ProductSlug, release.ID); err != nil {
 			return "", fmt.Errorf("failed to accept EULA: %w", err)
 		}
-		eulaURL := fmt.Sprintf("https://network.pivotal.io/products/%s/releases/%d", opts.ProductSlug, release.ID)
 		d.eula.Accept(opts.ProductSlug, release.Version, eulaURL)
 	}
 
