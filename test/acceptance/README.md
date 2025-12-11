@@ -199,7 +199,7 @@ export PIVNET_TOKEN="your-token-here"
 ```
 
 ### Network Errors
-Some tests require internet access. Ensure you can reach `network.tanzu.vmware.com`.
+Some tests require internet access. The API is still hosted at `network.tanzu.vmware.com` (Broadcom infrastructure).
 
 ### Cache Issues
 If cache tests fail, manually clean the cache:

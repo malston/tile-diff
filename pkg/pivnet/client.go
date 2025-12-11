@@ -59,8 +59,8 @@ func NewClient(token string) (*Client, error) {
 	if len(token) <= 32 {
 		fmt.Printf("\n⚠️  Warning: Your Pivnet token appears to be a legacy format (%d chars).\n", len(token))
 		fmt.Printf("Legacy tokens don't support all API endpoints (especially downloads).\n")
-		fmt.Printf("Please get a new UAA token from:\n")
-		fmt.Printf("https://network.tanzu.vmware.com/users/dashboard/edit-profile\n\n")
+		fmt.Printf("Please get a new UAA token from the Broadcom Support Portal:\n")
+		fmt.Printf("https://support.broadcom.com/\n\n")
 	}
 
 	return &Client{

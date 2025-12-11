@@ -7,7 +7,7 @@
 export PIVNET_TOKEN="your-pivnet-api-token"
 ```
 
-Get your token from: https://network.tanzu.vmware.com/users/dashboard/edit-profile
+Get your token from the Broadcom Support Portal: https://support.broadcom.com/
 
 ### 2. Run the tests
 ```bash

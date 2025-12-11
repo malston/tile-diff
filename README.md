@@ -106,10 +106,10 @@ If you've already downloaded tiles:
 
 ### Getting a Pivnet API Token
 
-1. Go to https://network.tanzu.vmware.com
-2. Sign in
-3. Navigate to your profile: https://network.tanzu.vmware.com/users/dashboard/edit-profile
-4. Copy your "API Token"
+1. Go to the Broadcom Support Portal: https://support.broadcom.com/
+2. Sign in with your Broadcom account
+3. Navigate to your API token settings
+4. Copy your "UAA API Token" (64+ characters, not the legacy 20-char token)
 5. Use it via flag or environment variable:
 
 ```bash
@@ -123,7 +123,7 @@ export PIVNET_TOKEN="your-token-here"
 
 ### EULA Acceptance
 
-**Important:** For legal reasons, EULAs must be accepted through the Tanzu Network web interface. The API does not support programmatic EULA acceptance for regular users (only for VMware employees).
+**Important:** For legal reasons, EULAs must be accepted through the Broadcom Support Portal web interface. The API does not support programmatic EULA acceptance for regular users (only for Broadcom/VMware employees).
 
 **First-time download workflow:**
 
