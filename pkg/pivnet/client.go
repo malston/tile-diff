@@ -199,22 +199,37 @@ func (c *Client) AcceptEULA(productSlug string, releaseID int) error {
 
 // DownloadFile downloads a product file
 func (c *Client) DownloadFile(productSlug string, releaseID, fileID int, writer io.Writer) error {
-	// Get download URL
-	resp, err := c.doRequest("POST", fmt.Sprintf("/api/v2/products/%s/releases/%d/product_files/%d/download", productSlug, releaseID, fileID))
+	// Get product file metadata to extract download link
+	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v2/products/%s/releases/%d/product_files/%d", productSlug, releaseID, fileID))
 	if err != nil {
-		return fmt.Errorf("failed to get download URL: %w", err)
+		return fmt.Errorf("failed to get product file metadata: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Download the file from the returned URL
-	// The response redirects to the actual download URL
-	downloadReq, err := http.NewRequest("GET", resp.Header.Get("Location"), nil)
+	var fileData struct {
+		Links struct {
+			Download struct {
+				Href string `json:"href"`
+			} `json:"download"`
+		} `json:"_links"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&fileData); err != nil {
+		return fmt.Errorf("failed to decode product file response: %w", err)
+	}
+
+	if fileData.Links.Download.Href == "" {
+		return fmt.Errorf("no download link found in response")
+	}
+
+	// Download the file from the download link
+	downloadReq, err := http.NewRequest("GET", fileData.Links.Download.Href, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create download request: %w", err)
 	}
 
 	// Add authorization header for the download
 	downloadReq.Header.Set("Authorization", "Bearer "+c.token)
+	downloadReq.Header.Set("Accept", "application/json")
 
 	downloadResp, err := c.httpClient.Do(downloadReq)
 	if err != nil {
@@ -223,7 +238,8 @@ func (c *Client) DownloadFile(productSlug string, releaseID, fileID int, writer 
 	defer downloadResp.Body.Close()
 
 	if downloadResp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed with status %d", downloadResp.StatusCode)
+		body, _ := io.ReadAll(downloadResp.Body)
+		return fmt.Errorf("download failed with status %d: %s", downloadResp.StatusCode, string(body))
 	}
 
 	// Copy the file content to the writer
