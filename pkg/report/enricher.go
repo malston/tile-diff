@@ -3,6 +3,8 @@
 package report
 
 import (
+	"sort"
+
 	"github.com/malston/tile-diff/pkg/releasenotes"
 )
 
@@ -28,27 +30,40 @@ func EnrichChanges(changes *CategorizedChanges, matches map[string]releasenotes.
 	// Group properties by feature
 	featureMap := make(map[string]*FeatureGroup)
 
-	// Process all changes
-	for _, change := range changes.RequiredActions {
-		if match, ok := matches[change.PropertyName]; ok {
-			featureName := match.Feature.Title
-			if _, exists := featureMap[featureName]; !exists {
-				featureMap[featureName] = &FeatureGroup{
-					Name:        match.Feature.Title,
-					Description: match.Feature.Description,
-					Properties:  []string{},
+	// Helper function to process changes
+	processChanges := func(changeList []CategorizedChange) {
+		for _, change := range changeList {
+			if match, ok := matches[change.PropertyName]; ok {
+				featureName := match.Feature.Title
+				if _, exists := featureMap[featureName]; !exists {
+					featureMap[featureName] = &FeatureGroup{
+						Name:        match.Feature.Title,
+						Description: match.Feature.Description,
+						Properties:  []string{},
+					}
 				}
+				featureMap[featureName].Properties = append(
+					featureMap[featureName].Properties,
+					change.PropertyName,
+				)
 			}
-			featureMap[featureName].Properties = append(
-				featureMap[featureName].Properties,
-				change.PropertyName,
-			)
 		}
 	}
 
-	// Convert map to slice
-	for _, group := range featureMap {
-		enriched.Features = append(enriched.Features, *group)
+	// Process all three categories
+	processChanges(changes.RequiredActions)
+	processChanges(changes.Warnings)
+	processChanges(changes.Informational)
+
+	// Convert map to slice with deterministic ordering
+	featureNames := make([]string, 0, len(featureMap))
+	for name := range featureMap {
+		featureNames = append(featureNames, name)
+	}
+	sort.Strings(featureNames)
+
+	for _, name := range featureNames {
+		enriched.Features = append(enriched.Features, *featureMap[name])
 	}
 
 	return enriched
