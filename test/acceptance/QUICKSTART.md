@@ -1,6 +1,6 @@
 # Acceptance Tests Quick Start
 
-## Run Tests in 3 Steps
+## Run Tests in 2 Steps
 
 ### 1. Set your Pivnet token
 ```bash
@@ -9,15 +9,12 @@ export PIVNET_TOKEN="your-pivnet-api-token"
 
 Get your token from: https://network.tanzu.vmware.com/users/dashboard/edit-profile
 
-### 2. Build the binary
-```bash
-make build
-```
-
-### 3. Run the tests
+### 2. Run the tests
 ```bash
 make test-acceptance
 ```
+
+The binary will be built automatically if needed.
 
 ## Expected Output
 
@@ -154,9 +151,12 @@ export PIVNET_TOKEN="your-token-here"
 ```
 
 ### "tile-diff binary not found"
-Build the binary first:
+This shouldn't happen when using `make test-acceptance` (builds automatically).
+
+If running test scripts directly:
 ```bash
 make build
+./test/acceptance/scenarios/01_non_interactive_mode.sh
 ```
 
 ### Tests are slow
@@ -170,8 +170,7 @@ For automated testing in CI/CD:
 set -e
 
 export PIVNET_TOKEN="${CI_PIVNET_TOKEN}"
-make build
-make test-acceptance
+make test-acceptance  # Builds automatically
 ```
 
 ## Next Steps
