@@ -213,6 +213,9 @@ func (c *Client) DownloadFile(productSlug string, releaseID, fileID int, writer 
 		return fmt.Errorf("failed to create download request: %w", err)
 	}
 
+	// Add authorization header for the download
+	downloadReq.Header.Set("Authorization", "Bearer "+c.token)
+
 	downloadResp, err := c.httpClient.Do(downloadReq)
 	if err != nil {
 		return fmt.Errorf("failed to download file: %w", err)
