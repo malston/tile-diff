@@ -66,7 +66,7 @@ func GenerateTextReportWithFeatures(enriched *EnrichedChanges, oldVersion, newVe
 
 		// Write ungrouped properties
 		if len(ungrouped) > 0 {
-			sb.WriteString("\n-- Ungrouped Properties --\n\n")
+			sb.WriteString("-- Ungrouped Properties --\n\n")
 			for _, change := range ungrouped {
 				writePropertyDetail(&sb, change, 0)
 			}
