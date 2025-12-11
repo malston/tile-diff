@@ -37,6 +37,18 @@ func (m *Matcher) Match(properties []string) map[string]Match {
 	return matches
 }
 
+var stopwords = map[string]bool{
+	"enable":     true,
+	"enabled":    true,
+	"setting":    true,
+	"settings":   true,
+	"config":     true,
+	"configure":  true,
+	"new":        true,
+	"property":   true,
+	"properties": true,
+}
+
 func (m *Matcher) findBestMatch(property string) (Match, bool) {
 	var bestMatch Match
 	bestConfidence := 0.0
@@ -54,10 +66,67 @@ func (m *Matcher) findBestMatch(property string) (Match, bool) {
 		}
 	}
 
-	// If no direct match found and no other matches, return false
-	if bestConfidence == 0.0 {
-		return bestMatch, false
+	// Try keyword matching
+	tokens := tokenizeProperty(property)
+	if len(tokens) >= 2 {
+		for _, feature := range m.features {
+			score := keywordScore(tokens, feature)
+			if score > bestConfidence {
+				bestConfidence = score
+				bestMatch = Match{
+					Property:   property,
+					Feature:    feature,
+					MatchType:  "keyword",
+					Confidence: score,
+				}
+			}
+		}
 	}
 
-	return bestMatch, true
+	// Only return if confidence > 0.5
+	if bestConfidence > 0.5 {
+		return bestMatch, true
+	}
+
+	return bestMatch, false
+}
+
+func tokenizeProperty(property string) []string {
+	// Remove common prefixes
+	prop := strings.TrimPrefix(property, ".properties.")
+	prop = strings.TrimPrefix(prop, ".cloud_controller.")
+
+	// Split on underscores and dots
+	parts := strings.FieldsFunc(prop, func(r rune) bool {
+		return r == '_' || r == '.' || r == '-'
+	})
+
+	// Filter stopwords
+	var tokens []string
+	for _, part := range parts {
+		lower := strings.ToLower(part)
+		if !stopwords[lower] && len(lower) > 2 {
+			tokens = append(tokens, lower)
+		}
+	}
+
+	return tokens
+}
+
+func keywordScore(tokens []string, feature Feature) float64 {
+	if len(tokens) == 0 {
+		return 0.0
+	}
+
+	searchText := strings.ToLower(feature.Title + " " + feature.Description)
+	matched := 0
+
+	for _, token := range tokens {
+		if strings.Contains(searchText, token) {
+			matched++
+		}
+	}
+
+	// Score: (matched / total) * 0.9
+	return (float64(matched) / float64(len(tokens))) * 0.9
 }

@@ -43,3 +43,54 @@ func TestDirectMatch(t *testing.T) {
 		t.Errorf("Expected feature title 'Enhanced Security', got %s", match.Feature.Title)
 	}
 }
+
+func TestKeywordMatch(t *testing.T) {
+	features := []Feature{
+		{
+			Title:       "Application Log Rate Limiting",
+			Description: "Prevent log flooding with rate limits on application logs",
+			Position:    1,
+		},
+	}
+
+	properties := []string{
+		".properties.app_log_rate_limiting",
+	}
+
+	matcher := NewMatcher(features)
+	matches := matcher.Match(properties)
+
+	match := matches[".properties.app_log_rate_limiting"]
+	if match.MatchType != "keyword" {
+		t.Errorf("Expected keyword match, got %s", match.MatchType)
+	}
+
+	if match.Confidence < 0.5 {
+		t.Errorf("Expected confidence >= 0.5, got %f", match.Confidence)
+	}
+}
+
+func TestTokenizeProperty(t *testing.T) {
+	tests := []struct {
+		property string
+		expected []string
+	}{
+		{
+			property: ".properties.app_log_rate_limiting",
+			expected: []string{"app", "log", "rate", "limiting"},
+		},
+		{
+			property: ".properties.security_scanner_enabled",
+			expected: []string{"security", "scanner"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.property, func(t *testing.T) {
+			tokens := tokenizeProperty(tt.property)
+			if len(tokens) != len(tt.expected) {
+				t.Errorf("Expected %d tokens, got %d", len(tt.expected), len(tokens))
+			}
+		})
+	}
+}
