@@ -14,6 +14,10 @@ This tool automates that analysis by comparing tile metadata and cross-referenci
 
 ## Features
 
+- **Automatic Tile Downloads**: Download tiles directly from Pivotal Network without manual steps
+- **Smart Caching**: Reuse downloaded tiles across comparisons
+- **Interactive Selection**: Fuzzy version matching with user-friendly prompts
+- **CI-Friendly**: Non-interactive mode for automated workflows
 - **Smart Property Comparison**: Automatically detects new, removed, and changed properties between tile versions
 - **Current Config Analysis**: Cross-references changes with your actual Ops Manager configuration
 - **Intelligent Categorization**: Classifies changes as Required Actions, Warnings, or Informational
@@ -37,12 +41,52 @@ make build
 
 ### Usage
 
-#### Compare Tiles with Actionable Report
+#### Download Tiles from Pivnet (Recommended)
 
+**Interactive Mode:**
+```bash
+export PIVNET_TOKEN="your-pivnet-api-token"
+
+./tile-diff \
+  --product-slug cf \
+  --old-version 6.0 \
+  --new-version 10.2.5
+```
+
+tile-diff will:
+- Resolve version strings (prompts if multiple matches)
+- Show available product files (e.g., TAS vs Small Footprint)
+- Handle EULA acceptance (one-time per product)
+- Cache downloads for reuse
+
+**Non-Interactive Mode (CI/Scripts):**
+```bash
+./tile-diff \
+  --product-slug cf \
+  --old-version '6.0.22+LTS-T' \
+  --new-version '10.2.5+LTS-T' \
+  --product-file "TAS for VMs" \
+  --pivnet-token "$PIVNET_TOKEN" \
+  --accept-eula \
+  --non-interactive
+```
+
+#### Use Local Files
+
+If you've already downloaded tiles:
 ```bash
 ./tile-diff \
   --old-tile srt-6.0.22.pivotal \
-  --new-tile srt-10.2.5.pivotal \
+  --new-tile srt-10.2.5.pivotal
+```
+
+#### Compare with Current Ops Manager Config
+
+```bash
+./tile-diff \
+  --product-slug cf \
+  --old-version 6.0.22 \
+  --new-version 10.2.5 \
   --product-guid cf-xxxxx \
   --ops-manager-url https://opsman.tas.vcf.lab \
   --username admin \
@@ -54,15 +98,27 @@ make build
 
 ```bash
 ./tile-diff \
-  --old-tile srt-6.0.22.pivotal \
-  --new-tile srt-10.2.5.pivotal \
+  --product-slug cf \
+  --old-version 6.0.22 \
+  --new-version 10.2.5 \
   --format json
 ```
 
-#### Basic Comparison (without current config)
+### Getting a Pivnet API Token
+
+1. Go to https://network.tanzu.vmware.com
+2. Sign in
+3. Navigate to your profile: https://network.tanzu.vmware.com/users/dashboard/edit-profile
+4. Copy your "API Token"
+5. Use it via flag or environment variable:
 
 ```bash
-./tile-diff --old-tile srt-6.0.22.pivotal --new-tile srt-10.2.5.pivotal
+# Via environment variable (recommended)
+export PIVNET_TOKEN="your-token-here"
+./tile-diff --product-slug cf --old-version 6.0 --new-version 10.2
+
+# Via flag
+./tile-diff --pivnet-token "your-token-here" --product-slug cf --old-version 6.0 --new-version 10.2
 ```
 
 ### Example Output
