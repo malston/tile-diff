@@ -160,7 +160,21 @@ func findUngroupedProperties(changes []CategorizedChange, featureProps map[strin
 
 func writeFeatureGroup(sb *strings.Builder, feature FeatureGroup, changes []CategorizedChange) {
 	sb.WriteString(fmt.Sprintf("📦 %s (%d properties)\n", feature.Name, len(feature.Properties)))
-	sb.WriteString(fmt.Sprintf("   %s\n\n", feature.Description))
+
+	// Clean and format the description
+	cleanedDesc := CleanDescription(feature.Description)
+	if cleanedDesc != "" {
+		// Indent each line of the description
+		lines := strings.Split(cleanedDesc, "\n")
+		for _, line := range lines {
+			if strings.TrimSpace(line) != "" {
+				sb.WriteString("   ")
+				sb.WriteString(line)
+				sb.WriteString("\n")
+			}
+		}
+		sb.WriteString("\n")
+	}
 
 	for _, prop := range feature.Properties {
 		for _, change := range changes {
