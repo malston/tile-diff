@@ -105,12 +105,13 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 
 	// Check EULA
 	if !d.eula.IsAccepted(opts.ProductSlug) {
-		eulaURL := fmt.Sprintf("https://network.pivotal.io/products/%s/releases/%d", opts.ProductSlug, release.ID)
+		eulaURL := fmt.Sprintf("https://network.tanzu.vmware.com/products/%s/releases/%d", opts.ProductSlug, release.ID)
+
+		if opts.NonInteractive && !opts.AcceptEULA {
+			return "", fmt.Errorf("EULA not accepted for %s.\n\nPlease accept the EULA at:\n%s\n\nThen run this command again, or use --accept-eula to acknowledge you've accepted it.", opts.ProductSlug, eulaURL)
+		}
 
 		if !opts.AcceptEULA {
-			if opts.NonInteractive {
-				return "", fmt.Errorf("EULA not accepted for %s (use --accept-eula)", opts.ProductSlug)
-			}
 			// Interactive EULA prompt
 			accepted, err := PromptForEULA(opts.ProductSlug, release.Version, eulaURL)
 			if err != nil {
@@ -121,11 +122,23 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 			}
 		}
 
-		// Accept EULA via API
-		if err := d.client.AcceptEULA(opts.ProductSlug, release.ID); err != nil {
-			return "", fmt.Errorf("failed to accept EULA: %w", err)
+		// Try to accept EULA via API
+		// Note: This only works for VMware/Broadcom employees
+		// For regular users, they must accept manually via web first
+		err := d.client.AcceptEULA(opts.ProductSlug, release.ID)
+		if err != nil {
+			// API acceptance failed - likely not a VMware employee
+			// Direct them to accept manually
+			fmt.Printf("\n⚠️  EULA must be accepted manually\n")
+			fmt.Printf("Please accept the EULA at:\n")
+			fmt.Printf("→ %s\n\n", eulaURL)
+			fmt.Printf("After accepting, press Enter to continue...")
+			fmt.Scanln()
 		}
+
+		// Mark as accepted locally
 		d.eula.Accept(opts.ProductSlug, release.Version, eulaURL)
+		fmt.Printf("EULA acceptance recorded for %s\n", opts.ProductSlug)
 	}
 
 	// Check disk space

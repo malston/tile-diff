@@ -1,6 +1,7 @@
 # Pivnet Integration Manual Test Procedure
 
 ## Prerequisites
+
 - Valid Pivnet API token
 - Internet connection
 - At least 25GB free disk space

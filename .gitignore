@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+main
 tile-diff
 
 # Test binary, built with `go test -c`
@@ -41,4 +42,3 @@ metadata-*.yml
 # Environment files
 .env
 .envrc
-main

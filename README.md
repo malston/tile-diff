@@ -121,6 +121,36 @@ export PIVNET_TOKEN="your-token-here"
 ./tile-diff --pivnet-token "your-token-here" --product-slug cf --old-version 6.0 --new-version 10.2
 ```
 
+### EULA Acceptance
+
+**Important:** For legal reasons, EULAs must be accepted through the Tanzu Network web interface. The API does not support programmatic EULA acceptance for regular users (only for VMware employees).
+
+**First-time download workflow:**
+
+1. Run tile-diff command
+2. If EULA not accepted, you'll be directed to the web URL
+3. Accept the EULA in your browser
+4. Press Enter to continue the download
+
+**Interactive mode:**
+```bash
+./tile-diff --product-slug cf --old-version 6.0 --new-version 10.2
+# Will pause and show EULA URL if needed
+```
+
+**Non-interactive mode:**
+```bash
+# For CI/CD: Accept EULAs through web first, then use --accept-eula to acknowledge
+./tile-diff \
+  --product-slug cf \
+  --old-version 6.0.22 \
+  --new-version 10.2.5 \
+  --accept-eula \
+  --non-interactive
+```
+
+Once accepted for a product, the acceptance is remembered locally and you won't be prompted again.
+
 ### Example Output
 
 ```

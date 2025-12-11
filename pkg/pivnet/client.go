@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 const defaultPivnetHost = "https://network.tanzu.vmware.com"
@@ -173,13 +174,14 @@ func (c *Client) AcceptEULA(productSlug string, releaseID int) error {
 	}
 
 	// Accept the EULA
-	req, err := http.NewRequest("POST", c.baseURL+fmt.Sprintf("/api/v2/products/%s/releases/%d/eula_acceptance", productSlug, releaseID), nil)
+	req, err := http.NewRequest("POST", c.baseURL+fmt.Sprintf("/api/v2/products/%s/releases/%d/pivnet_resource_eula_acceptance", productSlug, releaseID), strings.NewReader("{}"))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	resp2, err := c.httpClient.Do(req)
 	if err != nil {
