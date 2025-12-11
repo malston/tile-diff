@@ -123,21 +123,25 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 
 		// Try to accept EULA via API
 		// Note: This only works for VMware/Broadcom employees
-		// For regular users, they must accept manually via web first
 		err := d.client.AcceptEULA(opts.ProductSlug, release.ID)
 		if err != nil {
-			// API acceptance failed - likely not a VMware employee
-			// Direct them to accept manually
+			// API acceptance failed - user must accept manually via web
 			fmt.Printf("\n⚠️  EULA must be accepted manually\n")
-			fmt.Printf("Please accept the EULA at:\n")
-			fmt.Printf("→ %s\n\n", eulaURL)
-			fmt.Printf("After accepting, press Enter to continue...")
+			fmt.Printf("API EULA acceptance is only available for Broadcom/VMware employees.\n")
+			fmt.Printf("\nPlease:\n")
+			fmt.Printf("1. Open this URL in your browser: %s\n", eulaURL)
+			fmt.Printf("2. Accept the EULA\n")
+			fmt.Printf("3. Press Enter here to continue...\n\n")
 			fmt.Scanln()
-		}
 
-		// Mark as accepted locally
-		d.eula.Accept(opts.ProductSlug, release.Version, eulaURL)
-		fmt.Printf("EULA acceptance recorded for %s\n", opts.ProductSlug)
+			// Don't mark as accepted yet - let the download verify it
+			// If the download succeeds, we'll mark it then
+			fmt.Printf("Proceeding with download (EULA acceptance will be verified)...\n")
+		} else {
+			// API acceptance succeeded (Broadcom/VMware employee)
+			d.eula.Accept(opts.ProductSlug, release.Version, eulaURL)
+			fmt.Printf("EULA accepted via API for %s\n", opts.ProductSlug)
+		}
 	}
 
 	// Check disk space
@@ -184,6 +188,14 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 
 	// Add to cache
 	d.cache.Add(opts.ProductSlug, release.Version, selectedFile.ID, targetPath, selectedFile.Size)
+
+	// Mark EULA as accepted now that download succeeded
+	// (If it wasn't already marked via API acceptance)
+	if !d.eula.IsAccepted(opts.ProductSlug) {
+		eulaURL := fmt.Sprintf("https://network.tanzu.vmware.com/products/%s/releases/%d", opts.ProductSlug, release.ID)
+		d.eula.Accept(opts.ProductSlug, release.Version, eulaURL)
+		fmt.Printf("EULA acceptance recorded for %s\n", opts.ProductSlug)
+	}
 
 	return targetPath, nil
 }
