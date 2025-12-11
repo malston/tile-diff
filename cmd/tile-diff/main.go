@@ -6,10 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/malston/tile-diff/pkg/api"
 	"github.com/malston/tile-diff/pkg/compare"
 	"github.com/malston/tile-diff/pkg/metadata"
+	"github.com/malston/tile-diff/pkg/pivnet"
 	"github.com/malston/tile-diff/pkg/report"
 )
 
@@ -24,21 +26,136 @@ func main() {
 	skipSSL := flag.Bool("skip-ssl-validation", false, "Skip SSL certificate validation")
 	reportFormat := flag.String("format", "text", "Output format: text or json")
 
+	// Pivnet-related flags
+	productSlug := flag.String("product-slug", "", "Pivnet product slug (e.g., 'cf')")
+	oldVersion := flag.String("old-version", "", "Old release version")
+	newVersion := flag.String("new-version", "", "New release version")
+	pivnetToken := flag.String("pivnet-token", "", "Pivnet API token (or use PIVNET_TOKEN env var)")
+	productFile := flag.String("product-file", "", "Specific product file name (optional)")
+	acceptEULA := flag.Bool("accept-eula", false, "Accept EULAs without prompting")
+	nonInteractive := flag.Bool("non-interactive", false, "Fail instead of prompting for input")
+	cacheDir := flag.String("cache-dir", "", "Download cache directory (default: ~/.tile-diff/cache)")
+
 	flag.Parse()
 
-	// Validate required flags
-	if *oldTile == "" || *newTile == "" {
-		fmt.Fprintf(os.Stderr, "Error: --old-tile and --new-tile are required\n\n")
+	// Detect mode: local files or Pivnet download
+	usingLocalFiles := *oldTile != "" || *newTile != ""
+	usingPivnet := *productSlug != "" || *oldVersion != "" || *newVersion != ""
+
+	if usingLocalFiles && usingPivnet {
+		fmt.Fprintf(os.Stderr, "Error: Cannot mix local and Pivnet modes\n")
+		fmt.Fprintf(os.Stderr, "Use either:\n")
+		fmt.Fprintf(os.Stderr, "  --old-tile + --new-tile (local files)\n")
+		fmt.Fprintf(os.Stderr, "OR\n")
+		fmt.Fprintf(os.Stderr, "  --product-slug + --old-version + --new-version (Pivnet download)\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	fmt.Printf("tile-diff - Ops Manager Product Tile Comparison\n")
-	fmt.Printf("================================================\n\n")
+	if !usingLocalFiles && !usingPivnet {
+		fmt.Fprintf(os.Stderr, "Error: Must provide either local files or Pivnet download options\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	var oldTilePath, newTilePath string
+
+	if usingPivnet {
+		// Validate Pivnet flags
+		if *productSlug == "" || *oldVersion == "" || *newVersion == "" {
+			fmt.Fprintf(os.Stderr, "Error: Pivnet mode requires --product-slug, --old-version, and --new-version\n\n")
+			flag.Usage()
+			os.Exit(1)
+		}
+
+		// Get Pivnet token from flag or env var
+		token := *pivnetToken
+		if token == "" {
+			token = os.Getenv("PIVNET_TOKEN")
+		}
+		if token == "" {
+			fmt.Fprintf(os.Stderr, "Error: Pivnet token required\n")
+			fmt.Fprintf(os.Stderr, "Provide via --pivnet-token or PIVNET_TOKEN env var\n\n")
+			flag.Usage()
+			os.Exit(1)
+		}
+
+		fmt.Printf("tile-diff - Ops Manager Product Tile Comparison\n")
+		fmt.Printf("================================================\n\n")
+		fmt.Printf("Mode: Pivnet Download\n")
+		fmt.Printf("Product: %s\n", *productSlug)
+		fmt.Printf("Versions: %s -> %s\n\n", *oldVersion, *newVersion)
+
+		// Create Pivnet client
+		client, err := pivnet.NewClient(token)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: Failed to create Pivnet client: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Setup paths
+		home, _ := os.UserHomeDir()
+		cacheDirectory := *cacheDir
+		if cacheDirectory == "" {
+			cacheDirectory = filepath.Join(home, ".tile-diff", "cache")
+		}
+		manifestFile := filepath.Join(home, ".tile-diff", "cache-manifest.json")
+		eulaFile := filepath.Join(home, ".tile-diff", "eulas.json")
+
+		// Create downloader
+		downloader := pivnet.NewDownloader(client, cacheDirectory, manifestFile, eulaFile, 20)
+
+		// Download old tile
+		fmt.Printf("Resolving and downloading old tile (%s)...\n", *oldVersion)
+		oldOpts := pivnet.DownloadOptions{
+			ProductSlug:    *productSlug,
+			Version:        *oldVersion,
+			ProductFile:    *productFile,
+			AcceptEULA:     *acceptEULA,
+			NonInteractive: *nonInteractive,
+			CacheDir:       cacheDirectory,
+		}
+		oldTilePath, err = downloader.Download(oldOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error downloading old tile: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✓ Old tile: %s\n\n", oldTilePath)
+
+		// Download new tile
+		fmt.Printf("Resolving and downloading new tile (%s)...\n", *newVersion)
+		newOpts := pivnet.DownloadOptions{
+			ProductSlug:    *productSlug,
+			Version:        *newVersion,
+			ProductFile:    *productFile,
+			AcceptEULA:     *acceptEULA,
+			NonInteractive: *nonInteractive,
+			CacheDir:       cacheDirectory,
+		}
+		newTilePath, err = downloader.Download(newOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error downloading new tile: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✓ New tile: %s\n\n", newTilePath)
+
+	} else {
+		// Local files mode
+		if *oldTile == "" || *newTile == "" {
+			fmt.Fprintf(os.Stderr, "Error: Local mode requires both --old-tile and --new-tile\n\n")
+			flag.Usage()
+			os.Exit(1)
+		}
+		oldTilePath = *oldTile
+		newTilePath = *newTile
+
+		fmt.Printf("tile-diff - Ops Manager Product Tile Comparison\n")
+		fmt.Printf("================================================\n\n")
+	}
 
 	// Load old tile metadata
-	fmt.Printf("Loading old tile: %s\n", *oldTile)
-	oldMetadata, err := metadata.LoadFromFile(*oldTile)
+	fmt.Printf("Loading old tile: %s\n", oldTilePath)
+	oldMetadata, err := metadata.LoadFromFile(oldTilePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading old tile: %v\n", err)
 		os.Exit(1)
@@ -46,8 +163,8 @@ func main() {
 	fmt.Printf("  Found %d properties\n", len(oldMetadata.PropertyBlueprints))
 
 	// Load new tile metadata
-	fmt.Printf("Loading new tile: %s\n", *newTile)
-	newMetadata, err := metadata.LoadFromFile(*newTile)
+	fmt.Printf("Loading new tile: %s\n", newTilePath)
+	newMetadata, err := metadata.LoadFromFile(newTilePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading new tile: %v\n", err)
 		os.Exit(1)
