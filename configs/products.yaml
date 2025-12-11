@@ -1,0 +1,8 @@
+# Tanzu Application Service (Cloud Foundry)
+cf: "https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-application-service/{version}/release-notes.html"
+
+# Tanzu Data Solutions
+p-mysql: "https://techdocs.broadcom.com/us/en/vmware-tanzu/data-solutions/tanzu-sql-mysql/{version}/release-notes.html"
+p-rabbitmq: "https://techdocs.broadcom.com/us/en/vmware-tanzu/data-solutions/tanzu-rabbitmq/{version}/release-notes.html"
+
+# Add more products as needed
