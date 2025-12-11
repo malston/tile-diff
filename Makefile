@@ -1,16 +1,34 @@
-.PHONY: build test clean install lint fmt vet
+.PHONY: build test test-acceptance test-acceptance-verbose test-smoke clean install lint fmt vet
 
 # Build the binary
 build:
 	go build -o tile-diff ./cmd/tile-diff
 
-# Run tests
+# Run unit tests
 test:
 	go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 # Run tests with coverage report
 test-coverage: test
 	go tool cover -html=coverage.txt -o coverage.html
+
+# Run acceptance tests
+test-acceptance: build
+	@echo "Running acceptance tests..."
+	@./test/acceptance/run_acceptance_tests.sh
+
+# Run acceptance tests with verbose output
+test-acceptance-verbose: build
+	@echo "Running acceptance tests (verbose)..."
+	@./test/acceptance/run_acceptance_tests.sh --verbose
+
+# Run all tests (unit + acceptance)
+test-all: test test-acceptance
+
+# Run smoke test (quick validation without PIVNET_TOKEN)
+test-smoke: build
+	@echo "Running smoke test..."
+	@./test/acceptance/smoke_test.sh
 
 # Clean build artifacts
 clean:
