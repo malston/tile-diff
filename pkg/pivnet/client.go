@@ -55,6 +55,14 @@ func NewClient(token string) (*Client, error) {
 		return nil, errors.New("pivnet token cannot be empty")
 	}
 
+	// Warn about legacy tokens
+	if len(token) <= 32 {
+		fmt.Printf("\n⚠️  Warning: Your Pivnet token appears to be a legacy format (%d chars).\n", len(token))
+		fmt.Printf("Legacy tokens don't support all API endpoints (especially downloads).\n")
+		fmt.Printf("Please get a new UAA token from:\n")
+		fmt.Printf("https://network.tanzu.vmware.com/users/dashboard/edit-profile\n\n")
+	}
+
 	return &Client{
 		token:      token,
 		httpClient: &http.Client{},
