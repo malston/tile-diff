@@ -4,6 +4,8 @@ package pivnet
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -21,8 +23,26 @@ func NewDiskManager(minFreeSpaceGB int64) *DiskManager {
 
 // HasEnoughSpace checks if there's enough disk space for a download
 func (d *DiskManager) HasEnoughSpace(path string, fileSize int64) (bool, error) {
+	// If path doesn't exist, check parent directory
+	checkPath := path
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		checkPath = filepath.Dir(path)
+		// Keep going up until we find an existing directory
+		for {
+			if _, err := os.Stat(checkPath); err == nil {
+				break
+			}
+			parent := filepath.Dir(checkPath)
+			if parent == checkPath {
+				// Reached root without finding existing dir
+				return false, fmt.Errorf("no existing directory found in path hierarchy")
+			}
+			checkPath = parent
+		}
+	}
+
 	var stat syscall.Statfs_t
-	err := syscall.Statfs(path, &stat)
+	err := syscall.Statfs(checkPath, &stat)
 	if err != nil {
 		return false, fmt.Errorf("failed to check disk space: %w", err)
 	}
@@ -38,8 +58,24 @@ func (d *DiskManager) HasEnoughSpace(path string, fileSize int64) (bool, error) 
 
 // GetAvailableSpace returns available space in bytes
 func (d *DiskManager) GetAvailableSpace(path string) (int64, error) {
+	// If path doesn't exist, check parent directory
+	checkPath := path
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		checkPath = filepath.Dir(path)
+		for {
+			if _, err := os.Stat(checkPath); err == nil {
+				break
+			}
+			parent := filepath.Dir(checkPath)
+			if parent == checkPath {
+				return 0, fmt.Errorf("no existing directory found in path hierarchy")
+			}
+			checkPath = parent
+		}
+	}
+
 	var stat syscall.Statfs_t
-	err := syscall.Statfs(path, &stat)
+	err := syscall.Statfs(checkPath, &stat)
 	if err != nil {
 		return 0, fmt.Errorf("failed to check disk space: %w", err)
 	}
