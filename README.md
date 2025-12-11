@@ -12,19 +12,14 @@ When upgrading product tiles (e.g., TAS from 6.0.22 to 10.2.5), operators need t
 
 This tool automates that analysis by comparing tile metadata and cross-referencing with your current Ops Manager configuration.
 
-## Status
+## Features
 
-✅ **Phase 1 Complete** - Extraction & parsing
-
-✅ **Phase 2 Complete** - Property comparison
-
-✅ **Phase 3 Complete** - Actionable reports
-
-Full upgrade analysis with:
-- Current config cross-reference
-- Change categorization (Required/Warning/Info)
-- Formatted reports (text and JSON)
-- Specific recommendations per change
+- **Smart Property Comparison**: Automatically detects new, removed, and changed properties between tile versions
+- **Current Config Analysis**: Cross-references changes with your actual Ops Manager configuration
+- **Intelligent Categorization**: Classifies changes as Required Actions, Warnings, or Informational
+- **Actionable Recommendations**: Provides specific guidance for each configuration change
+- **Multiple Output Formats**: Human-readable text reports and machine-readable JSON
+- **Constraint Validation**: Checks if current values meet new requirements
 
 ## Documentation
 
