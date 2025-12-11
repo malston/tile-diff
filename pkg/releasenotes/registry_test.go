@@ -41,3 +41,34 @@ func TestResolveURL_ProductNotFound(t *testing.T) {
 		t.Error("Expected error for unknown product")
 	}
 }
+
+func TestIdentifyProduct(t *testing.T) {
+	metadata := map[string]interface{}{
+		"name": "cf",
+	}
+
+	productID := IdentifyProduct(metadata)
+	if productID != "cf" {
+		t.Errorf("Expected cf, got %s", productID)
+	}
+}
+
+func TestIdentifyProduct_Normalize(t *testing.T) {
+	metadata := map[string]interface{}{
+		"name": "Tanzu Application Service",
+	}
+
+	productID := IdentifyProduct(metadata)
+	if productID != "cf" {
+		t.Errorf("Expected cf, got %s", productID)
+	}
+}
+
+func TestIdentifyProduct_NotFound(t *testing.T) {
+	metadata := map[string]interface{}{}
+
+	productID := IdentifyProduct(metadata)
+	if productID != "" {
+		t.Errorf("Expected empty string, got %s", productID)
+	}
+}

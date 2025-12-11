@@ -38,3 +38,36 @@ func (c ProductConfig) ResolveURL(productID, version string) (string, error) {
 	url := strings.ReplaceAll(pattern, "{version}", version)
 	return url, nil
 }
+
+var productNameMapping = map[string]string{
+	"tanzu application service": "cf",
+	"tas":                        "cf",
+	"cf":                         "cf",
+	"mysql":                      "p-mysql",
+	"p-mysql":                    "p-mysql",
+	"rabbitmq":                   "p-rabbitmq",
+	"p-rabbitmq":                 "p-rabbitmq",
+}
+
+// IdentifyProduct extracts and normalizes product ID from tile metadata
+func IdentifyProduct(metadata map[string]interface{}) string {
+	// Try "name" field first
+	if name, ok := metadata["name"].(string); ok {
+		normalized := strings.ToLower(strings.TrimSpace(name))
+		if productID, found := productNameMapping[normalized]; found {
+			return productID
+		}
+		return normalized
+	}
+
+	// Try "product_name" field
+	if name, ok := metadata["product_name"].(string); ok {
+		normalized := strings.ToLower(strings.TrimSpace(name))
+		if productID, found := productNameMapping[normalized]; found {
+			return productID
+		}
+		return normalized
+	}
+
+	return ""
+}
