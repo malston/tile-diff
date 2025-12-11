@@ -168,3 +168,32 @@ func TestGenerateTextReport_ShowsDefaultValues(t *testing.T) {
 		}
 	}
 }
+
+func TestGenerateTextReport_WithFeatures(t *testing.T) {
+	enriched := &EnrichedChanges{
+		CategorizedChanges: &CategorizedChanges{
+			RequiredActions: []CategorizedChange{
+				{
+					ComparisonResult: compare.ComparisonResult{
+						PropertyName: ".properties.security_enabled",
+					},
+					Category:       CategoryRequired,
+					Recommendation: "Enable security scanning",
+				},
+			},
+		},
+		Features: []FeatureGroup{
+			{
+				Name:        "Enhanced Security",
+				Description: "Security scanning feature",
+				Properties:  []string{".properties.security_enabled"},
+			},
+		},
+	}
+
+	report := GenerateTextReportWithFeatures(enriched, "6.0.22", "10.2.5")
+
+	if !strings.Contains(report, "📦 Enhanced Security") {
+		t.Error("Expected report to contain feature grouping")
+	}
+}
