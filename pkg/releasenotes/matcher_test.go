@@ -34,4 +34,12 @@ func TestDirectMatch(t *testing.T) {
 	if match.Confidence != 1.0 {
 		t.Errorf("Expected confidence 1.0, got %f", match.Confidence)
 	}
+
+	if match.Property != ".properties.security_scanner_enabled" {
+		t.Errorf("Expected property .properties.security_scanner_enabled, got %s", match.Property)
+	}
+
+	if match.Feature.Title != "Enhanced Security" {
+		t.Errorf("Expected feature title 'Enhanced Security', got %s", match.Feature.Title)
+	}
 }
