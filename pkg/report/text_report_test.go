@@ -90,3 +90,81 @@ func TestGenerateTextReport(t *testing.T) {
 		t.Error("Expected recommendation text in report")
 	}
 }
+
+func TestGenerateTextReport_ShowsDefaultValues(t *testing.T) {
+	boolDefault := true
+	stringDefault := "default-value"
+
+	categorized := &CategorizedChanges{
+		Informational: []CategorizedChange{
+			{
+				ComparisonResult: compare.ComparisonResult{
+					PropertyName: "optional_bool",
+					ChangeType:   compare.PropertyAdded,
+					NewProperty: &metadata.PropertyBlueprint{
+						Name:     "optional_bool",
+						Type:     "boolean",
+						Optional: true,
+						Default:  boolDefault,
+					},
+				},
+				Category:       CategoryInformational,
+				Recommendation: "Optional",
+			},
+			{
+				ComparisonResult: compare.ComparisonResult{
+					PropertyName: "optional_string",
+					ChangeType:   compare.PropertyAdded,
+					NewProperty: &metadata.PropertyBlueprint{
+						Name:     "optional_string",
+						Type:     "string",
+						Optional: true,
+						Default:  stringDefault,
+					},
+				},
+				Category:       CategoryInformational,
+				Recommendation: "Optional",
+			},
+			{
+				ComparisonResult: compare.ComparisonResult{
+					PropertyName: "optional_no_default",
+					ChangeType:   compare.PropertyAdded,
+					NewProperty: &metadata.PropertyBlueprint{
+						Name:     "optional_no_default",
+						Type:     "integer",
+						Optional: true,
+						Default:  nil,
+					},
+				},
+				Category:       CategoryInformational,
+				Recommendation: "Optional",
+			},
+		},
+	}
+
+	report := GenerateTextReport(categorized, "6.0.22", "10.2.5")
+
+	// Check that default values are shown
+	if !strings.Contains(report, "Default: true") {
+		t.Error("Expected 'Default: true' for boolean property with default")
+	}
+	if !strings.Contains(report, "Default: default-value") {
+		t.Error("Expected 'Default: default-value' for string property with default")
+	}
+
+	// Check that properties without defaults don't show Default line
+	lines := strings.Split(report, "\n")
+	inNoDefaultSection := false
+	for _, line := range lines {
+		if strings.Contains(line, "optional_no_default") {
+			inNoDefaultSection = true
+		}
+		if inNoDefaultSection && strings.Contains(line, "Note:") {
+			// We've reached the end of this property section
+			break
+		}
+		if inNoDefaultSection && strings.Contains(line, "Default:") {
+			t.Error("Property without default should not show Default line")
+		}
+	}
+}

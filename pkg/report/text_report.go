@@ -66,6 +66,9 @@ func GenerateTextReport(categorized *CategorizedChanges, oldVersion, newVersion 
 			report.WriteString(fmt.Sprintf("%d. %s\n", i+1, change.PropertyName))
 			if change.NewProperty != nil {
 				report.WriteString(fmt.Sprintf("   Type: %s\n", change.NewProperty.Type))
+				if change.NewProperty.Default != nil {
+					report.WriteString(fmt.Sprintf("   Default: %v\n", change.NewProperty.Default))
+				}
 			}
 			report.WriteString(fmt.Sprintf("   Note: %s\n", change.Recommendation))
 			report.WriteString("\n")
