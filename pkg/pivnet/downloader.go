@@ -102,8 +102,8 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 		return cached.FilePath, nil
 	}
 
-	// Check EULA
-	if !d.eula.IsAccepted(opts.ProductSlug) {
+	// Check EULA (per-release acceptance required)
+	if !d.eula.IsAcceptedForRelease(opts.ProductSlug, release.Version) {
 		eulaURL := fmt.Sprintf("https://network.tanzu.vmware.com/products/%s/releases/%d", opts.ProductSlug, release.ID)
 
 		if opts.NonInteractive && !opts.AcceptEULA {
@@ -191,10 +191,10 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 
 	// Mark EULA as accepted now that download succeeded
 	// (If it wasn't already marked via API acceptance)
-	if !d.eula.IsAccepted(opts.ProductSlug) {
+	if !d.eula.IsAcceptedForRelease(opts.ProductSlug, release.Version) {
 		eulaURL := fmt.Sprintf("https://network.tanzu.vmware.com/products/%s/releases/%d", opts.ProductSlug, release.ID)
 		d.eula.Accept(opts.ProductSlug, release.Version, eulaURL)
-		fmt.Printf("EULA acceptance recorded for %s\n", opts.ProductSlug)
+		fmt.Printf("EULA acceptance recorded for %s %s\n", opts.ProductSlug, release.Version)
 	}
 
 	return targetPath, nil

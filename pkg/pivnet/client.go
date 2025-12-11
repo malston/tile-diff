@@ -113,6 +113,7 @@ func (c *Client) GetProductFiles(productSlug string, releaseID int) ([]ProductFi
 	for _, pf := range productFiles {
 		// Only include files that are actual tiles (not docs, etc)
 		if pf.FileType == "Software" || pf.AWSObjectKey != "" {
+			fmt.Printf("DEBUG: ProductFile - Name: %s, Size: %d, FileType: %s\n", pf.Name, pf.Size, pf.FileType)
 			result = append(result, ProductFile{
 				ID:           pf.ID,
 				Name:         pf.Name,

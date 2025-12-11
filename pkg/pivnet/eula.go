@@ -33,15 +33,34 @@ func NewEULAManager(filePath string) *EULAManager {
 	return mgr
 }
 
-// IsAccepted checks if EULA has been accepted for a product
+// IsAccepted checks if EULA has been accepted for a product release
 func (m *EULAManager) IsAccepted(productSlug string) bool {
-	_, exists := m.records[productSlug]
+	// For backwards compatibility, check both product-only and any product-release keys
+	if _, exists := m.records[productSlug]; exists {
+		return true
+	}
+
+	// Check if any release of this product has accepted EULA
+	for key := range m.records {
+		if len(key) >= len(productSlug) && key[:len(productSlug)] == productSlug {
+			return true
+		}
+	}
+	return false
+}
+
+// IsAcceptedForRelease checks if EULA has been accepted for a specific release
+func (m *EULAManager) IsAcceptedForRelease(productSlug, version string) bool {
+	key := fmt.Sprintf("%s-%s", productSlug, version)
+	_, exists := m.records[key]
 	return exists
 }
 
-// Accept records EULA acceptance for a product
+// Accept records EULA acceptance for a product release
 func (m *EULAManager) Accept(productSlug, version, eulaURL string) error {
-	m.records[productSlug] = EULARecord{
+	// Key by product-version to track per-release acceptance
+	key := fmt.Sprintf("%s-%s", productSlug, version)
+	m.records[key] = EULARecord{
 		AcceptedAt:     time.Now().UTC().Format(time.RFC3339),
 		ReleaseVersion: version,
 		EULAURL:        eulaURL,
