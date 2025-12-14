@@ -1,4 +1,4 @@
-.PHONY: build test test-acceptance test-acceptance-verbose test-smoke clean install lint fmt vet
+.PHONY: build test acceptance-test acceptance-test-with-token clean install lint fmt vet
 
 # Build the binary
 build:
@@ -6,29 +6,33 @@ build:
 
 # Run unit tests
 test:
-	go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+	go test -v -race -coverprofile=coverage.txt -covermode=atomic ./pkg/...
 
 # Run tests with coverage report
 test-coverage: test
 	go tool cover -html=coverage.txt -o coverage.html
 
-# Run acceptance tests
-test-acceptance: build
-	@echo "Running acceptance tests..."
-	@./test/acceptance/run_acceptance_tests.sh
+# Run Ginkgo acceptance tests (requires PIVNET_TOKEN env var)
+acceptance-test: build
+	@if [ -z "$$PIVNET_TOKEN" ]; then \
+		echo "Error: PIVNET_TOKEN environment variable is required"; \
+		echo "Export it or use 'make acceptance-test-with-token'"; \
+		exit 1; \
+	fi
+	ginkgo -v ./test
 
-# Run acceptance tests with verbose output
-test-acceptance-verbose: build
-	@echo "Running acceptance tests (verbose)..."
-	@./test/acceptance/run_acceptance_tests.sh --verbose
+# Run Ginkgo acceptance tests with PIVNET_TOKEN from command line
+# Usage: make acceptance-test-with-token PIVNET_TOKEN=your-token-here
+acceptance-test-with-token: build
+	@if [ -z "$(PIVNET_TOKEN)" ]; then \
+		echo "Error: PIVNET_TOKEN is required"; \
+		echo "Usage: make acceptance-test-with-token PIVNET_TOKEN=your-token-here"; \
+		exit 1; \
+	fi
+	PIVNET_TOKEN=$(PIVNET_TOKEN) ginkgo -v ./test
 
 # Run all tests (unit + acceptance)
-test-all: test test-acceptance
-
-# Run smoke test (quick validation without PIVNET_TOKEN)
-test-smoke: build
-	@echo "Running smoke test..."
-	@./test/acceptance/smoke_test.sh
+test-all: test acceptance-test
 
 # Clean build artifacts
 clean:
