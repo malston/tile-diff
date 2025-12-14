@@ -25,7 +25,8 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
-	github.com/onsi/gomega v1.4.2 // indirect
+	github.com/onsi/ginkgo/v2 v2.27.3 // indirect
+	github.com/onsi/gomega v1.38.3 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.5 // indirect
@@ -36,4 +37,5 @@ require (
 	golang.org/x/term v0.38.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.26 // indirect
+	gopkg.in/dnaeon/go-vcr.v3 v3.2.0 // indirect
 )
