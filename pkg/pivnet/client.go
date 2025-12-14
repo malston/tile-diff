@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/pivotal-cf/go-pivnet/v7"
 	"github.com/pivotal-cf/go-pivnet/v7/download"
@@ -131,6 +132,15 @@ func (c *Client) GetProductFileSize(productSlug string, releaseID, fileID int) (
 	// Get individual file metadata which includes the actual size
 	pf, err := c.pivnetClient.ProductFiles.GetForRelease(productSlug, releaseID, fileID)
 	if err != nil {
+		errMsg := err.Error()
+		// Check if this is an authentication error
+		if strings.Contains(errMsg, "valid API token") ||
+		   strings.Contains(errMsg, "token") ||
+		   strings.Contains(errMsg, "authentication") ||
+		   strings.Contains(errMsg, "401") ||
+		   strings.Contains(errMsg, "unauthorized") {
+			return 0, fmt.Errorf("authentication failed - invalid token or unauthorized: %w", err)
+		}
 		return 0, fmt.Errorf("failed to get file metadata: %w", err)
 	}
 

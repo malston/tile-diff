@@ -242,10 +242,19 @@ func main() {
 		home, _ := os.UserHomeDir()
 		cacheDirectory := *cacheDir
 		if cacheDirectory == "" {
-			cacheDirectory = filepath.Join(home, ".tile-diff", "cache")
+			// Check environment variable before using default
+			cacheDirectory = os.Getenv("PIVNET_CACHE_DIR")
+			if cacheDirectory == "" {
+				cacheDirectory = filepath.Join(home, ".tile-diff", "cache")
+			}
 		}
-		manifestFile := filepath.Join(home, ".tile-diff", "cache-manifest.json")
-		eulaFile := filepath.Join(home, ".tile-diff", "eulas.json")
+		manifestFile := filepath.Join(cacheDirectory, "manifest.json")
+
+		// Check environment variable for EULA file, otherwise place in cache dir
+		eulaFile := os.Getenv("PIVNET_EULA_FILE")
+		if eulaFile == "" {
+			eulaFile = filepath.Join(cacheDirectory, "eula_acceptance.json")
+		}
 
 		// Create downloader
 		downloader := pivnet.NewDownloader(client, cacheDirectory, manifestFile, eulaFile, 20)

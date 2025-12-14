@@ -203,6 +203,7 @@ var _ = Describe("Pivnet Integration", func() {
 				"--product-slug", "p-redis",
 				"--old-version", "3.2.0",
 				"--new-version", "3.2.1",
+				"--product-file", "Redis for VMware Tanzu Application Service",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--non-interactive",
 			)
@@ -229,6 +230,7 @@ var _ = Describe("Pivnet Integration", func() {
 				"--product-slug", "p-redis",
 				"--old-version", "3.2.0",
 				"--new-version", "3.2.1",
+				"--product-file", "Redis for VMware Tanzu Application Service",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--accept-eula",
 				"--non-interactive",
@@ -246,6 +248,7 @@ var _ = Describe("Pivnet Integration", func() {
 				"--product-slug", "p-redis",
 				"--old-version", "3.2.0",
 				"--new-version", "3.2.1",
+				"--product-file", "Redis for VMware Tanzu Application Service",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--non-interactive",
 			)
@@ -266,6 +269,7 @@ var _ = Describe("Pivnet Integration", func() {
 				"--product-slug", "p-redis",
 				"--old-version", "3.2.0",
 				"--new-version", "3.2.1",
+				"--product-file", "Redis for VMware Tanzu Application Service",
 				"--pivnet-token", "invalid-token-12345",
 				"--accept-eula",
 				"--non-interactive",
