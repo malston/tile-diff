@@ -19,7 +19,7 @@ acceptance-test: build
 		echo "Export it or use 'make acceptance-test-with-token'"; \
 		exit 1; \
 	fi
-	ginkgo -v ./test
+	TILE_DIFF_BIN="$(PWD)/tile-diff" ginkgo -v ./test
 
 # Run Ginkgo acceptance tests with PIVNET_TOKEN from command line
 # Usage: make acceptance-test-with-token PIVNET_TOKEN=your-token-here
@@ -29,7 +29,7 @@ acceptance-test-with-token: build
 		echo "Usage: make acceptance-test-with-token PIVNET_TOKEN=your-token-here"; \
 		exit 1; \
 	fi
-	PIVNET_TOKEN=$(PIVNET_TOKEN) ginkgo -v ./test
+	TILE_DIFF_BIN="$(PWD)/tile-diff" PIVNET_TOKEN=$(PIVNET_TOKEN) ginkgo -v ./test
 
 # Run all tests (unit + acceptance)
 test-all: test acceptance-test

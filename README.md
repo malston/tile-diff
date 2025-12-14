@@ -244,6 +244,7 @@ Summary: 2 required actions must be completed before upgrade
 - `om` CLI (Ops Manager CLI)
 - Access to product tile `.pivotal` files
 - Access to Ops Manager API (for current config comparison)
+- Ginkgo v2 (for running acceptance tests)
 
 ### Setup
 
@@ -255,12 +256,73 @@ cd tile-diff
 # Install dependencies
 go mod download
 
+# Install Ginkgo (if not already installed)
+go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
 # Build
 make build
 
-# Run tests
+# Run unit tests
 make test
+
+# Run acceptance tests (requires PIVNET_TOKEN)
+export PIVNET_TOKEN="your-pivnet-api-token"
+make acceptance-test
+
+# Run all tests (unit + acceptance)
+make test-all
 ```
+
+### Running Tests
+
+The project includes comprehensive test coverage at multiple levels:
+
+#### Unit Tests
+
+Unit tests cover individual packages and run without external dependencies:
+
+```bash
+# Run all unit tests with coverage
+make test
+
+# Generate HTML coverage report
+make test-coverage
+
+# Run tests for a specific package
+go test -v ./pkg/compare/...
+```
+
+#### Acceptance Tests
+
+Acceptance tests use Ginkgo v2 and verify end-to-end functionality against live Pivnet:
+
+```bash
+# Set your Pivnet API token
+export PIVNET_TOKEN="your-pivnet-api-token"
+
+# Run Ginkgo acceptance tests
+make acceptance-test
+
+# Or run Ginkgo directly with verbose output
+ginkgo -v ./test
+
+# Run specific test suites
+ginkgo -v --focus="Cache Verification" ./test
+ginkgo -v --focus="EULA Handling" ./test
+```
+
+**Note:** Acceptance tests require a valid `PIVNET_TOKEN` environment variable. Tests will be skipped if the token is not set.
+
+#### Integration Tests
+
+Integration tests use real tile files and are tagged separately:
+
+```bash
+# Run integration tests (requires actual tile files)
+go test -v -tags=integration ./test/...
+```
+
+See [test/README.md](test/README.md) for detailed documentation on test structure and organization.
 
 ### Project Structure
 
