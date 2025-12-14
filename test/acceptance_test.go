@@ -3,7 +3,10 @@
 package test
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -11,6 +14,9 @@ import (
 
 var _ = Describe("Pivnet Integration", func() {
 	BeforeEach(func() {
+		if _, err := os.Stat(tileDiffBin); os.IsNotExist(err) {
+			Fail(fmt.Sprintf("tile-diff binary not found at %s - run 'make build' first", tileDiffBin))
+		}
 		if os.Getenv("PIVNET_TOKEN") == "" {
 			Skip("PIVNET_TOKEN not set - skipping live Pivnet tests")
 		}
@@ -39,10 +45,11 @@ var _ = Describe("Pivnet Integration", func() {
 				"--non-interactive",
 			)
 
-			// If the versions don't exist, expect a clear error message
 			if err != nil {
-				Expect(output).To(ContainSubstring("no releases found matching version"))
-				Skip("Test product/versions not available in Pivnet - update test to use valid versions")
+				if strings.Contains(output, "no releases found matching version") {
+					Skip("Test product/versions not available - update test")
+				}
+				Fail(fmt.Sprintf("Unexpected error: %v\nOutput: %s", err, output))
 			}
 
 			// Should mention downloading or using cache
@@ -70,17 +77,17 @@ var _ = Describe("Pivnet Integration", func() {
 				"--format", "json",
 			)
 
-			// If the versions don't exist, expect a clear error message
 			if err != nil {
-				Expect(output).To(ContainSubstring("no releases found matching version"))
-				Skip("Test product/versions not available in Pivnet - update test to use valid versions")
+				if strings.Contains(output, "no releases found matching version") {
+					Skip("Test product/versions not available - update test")
+				}
+				Fail(fmt.Sprintf("Unexpected error: %v\nOutput: %s", err, output))
 			}
 
-			// Output should be valid JSON (we can check for basic JSON structure)
-			Expect(output).To(Or(
-				ContainSubstring("{"),
-				ContainSubstring("}"),
-			))
+			// Validate that output is actually valid JSON by parsing it
+			var result interface{}
+			err = json.Unmarshal([]byte(output), &result)
+			Expect(err).NotTo(HaveOccurred(), "Output should be valid JSON")
 		})
 	})
 })
