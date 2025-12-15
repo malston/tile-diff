@@ -14,6 +14,10 @@ This tool automates that analysis by comparing tile metadata and cross-referenci
 
 ## Features
 
+- **Automatic Tile Downloads**: Download tiles directly from Pivotal Network without manual steps
+- **Smart Caching**: Reuse downloaded tiles across comparisons
+- **Interactive Selection**: Fuzzy version matching with user-friendly prompts
+- **CI-Friendly**: Non-interactive mode for automated workflows
 - **Smart Property Comparison**: Automatically detects new, removed, and changed properties between tile versions
 - **Current Config Analysis**: Cross-references changes with your actual Ops Manager configuration
 - **Intelligent Categorization**: Classifies changes as Required Actions, Warnings, or Informational
@@ -37,12 +41,52 @@ make build
 
 ### Usage
 
-#### Compare Tiles with Actionable Report
+#### Download Tiles from Pivnet (Recommended)
 
+**Interactive Mode:**
+```bash
+export PIVNET_TOKEN="your-pivnet-api-token"
+
+./tile-diff \
+  --product-slug cf \
+  --old-version 6.0 \
+  --new-version 10.2.5
+```
+
+tile-diff will:
+- Resolve version strings (prompts if multiple matches)
+- Show available product files (e.g., TAS vs Small Footprint)
+- Handle EULA acceptance (one-time per product)
+- Cache downloads for reuse
+
+**Non-Interactive Mode (CI/Scripts):**
+```bash
+./tile-diff \
+  --product-slug cf \
+  --old-version '6.0.22+LTS-T' \
+  --new-version '10.2.5+LTS-T' \
+  --product-file "TAS for VMs" \
+  --pivnet-token "$PIVNET_TOKEN" \
+  --accept-eula \
+  --non-interactive
+```
+
+#### Use Local Files
+
+If you've already downloaded tiles:
 ```bash
 ./tile-diff \
   --old-tile srt-6.0.22.pivotal \
-  --new-tile srt-10.2.5.pivotal \
+  --new-tile srt-10.2.5.pivotal
+```
+
+#### Compare with Current Ops Manager Config
+
+```bash
+./tile-diff \
+  --product-slug cf \
+  --old-version 6.0.22 \
+  --new-version 10.2.5 \
   --product-guid cf-xxxxx \
   --ops-manager-url https://opsman.tas.vcf.lab \
   --username admin \
@@ -54,37 +98,121 @@ make build
 
 ```bash
 ./tile-diff \
-  --old-tile srt-6.0.22.pivotal \
-  --new-tile srt-10.2.5.pivotal \
+  --product-slug cf \
+  --old-version 6.0.22 \
+  --new-version 10.2.5 \
   --format json
 ```
 
-#### Basic Comparison (without current config)
+### Getting a Pivnet API Token
+
+1. Go to the Broadcom Support Portal: https://support.broadcom.com/
+2. Sign in with your Broadcom account
+3. Navigate to your API token settings
+4. Copy your "UAA API Token" (64+ characters, not the legacy 20-char token)
+5. Use it via flag or environment variable:
 
 ```bash
-./tile-diff --old-tile srt-6.0.22.pivotal --new-tile srt-10.2.5.pivotal
+# Via environment variable (recommended)
+export PIVNET_TOKEN="your-token-here"
+./tile-diff --product-slug cf --old-version 6.0 --new-version 10.2
+
+# Via flag
+./tile-diff --pivnet-token "your-token-here" --product-slug cf --old-version 6.0 --new-version 10.2
 ```
+
+### EULA Acceptance
+
+**Important:** For legal reasons, EULAs must be accepted through the Broadcom Support Portal web interface. The API does not support programmatic EULA acceptance for regular users (only for Broadcom/VMware employees).
+
+**First-time download workflow:**
+
+1. Run tile-diff command
+2. If EULA not accepted, you'll be directed to the web URL
+3. Accept the EULA in your browser
+4. Press Enter to continue the download
+
+**Interactive mode:**
+```bash
+./tile-diff --product-slug cf --old-version 6.0 --new-version 10.2
+# Will pause and show EULA URL if needed
+```
+
+**Non-interactive mode:**
+```bash
+# For CI/CD: Accept EULAs through web first, then use --accept-eula to acknowledge
+./tile-diff \
+  --product-slug cf \
+  --old-version 6.0.22 \
+  --new-version 10.2.5 \
+  --accept-eula \
+  --non-interactive
+```
+
+Once accepted for a product, the acceptance is remembered locally and you won't be prompted again.
 
 ### Example Output
 
 ```
-================================================================================
-                    Ops Manager Tile Upgrade Analysis
-================================================================================
+tile-diff - Ops Manager Product Tile Comparison
+================================================
 
-Old Version: srt-6.0.22
-New Version: srt-10.2.5
+Mode: Pivnet Download
+Product: cf
+Versions: 6.0.22 -> 10.2.5
 
-Loading old tile...
-  Found 274 properties (184 configurable)
-Loading new tile...
-  Found 272 properties (182 configurable)
+Resolving and downloading old tile (6.0.22)...
+✓ Old tile: /Users/user/.tile-diff/cache/srt-6.0.22.pivotal
+
+Resolving and downloading new tile (10.2.5)...
+✓ New tile: /Users/user/.tile-diff/cache/srt-10.2.5.pivotal
+
+Loading old tile: /Users/user/.tile-diff/cache/srt-6.0.22.pivotal
+  Found 274 properties
+Loading new tile: /Users/user/.tile-diff/cache/srt-10.2.5.pivotal
+  Found 272 properties
+
+Comparing tiles...
+
+Comparison Results:
+===================
+
+✨ New Properties (8):
+  + .properties.new_security_setting (boolean)
+  + .properties.enhanced_monitoring (string)
+  ...
+
+🗑️  Removed Properties (4):
+  - .properties.deprecated_timeout (integer)
+  - .properties.old_feature (string)
+  ...
+
+🔄 Changed Properties (2):
+  ~ .properties.authentication_method: Type changed from string to selector
+  ~ .properties.memory_limit: Constraints changed
+
+Summary:
+  Properties in old tile: 274
+  Properties in new tile: 272
+  Added: 8, Removed: 4, Changed: 2
+
+Configurable properties:
+  Old tile: 184
+  New tile: 182
 
 Querying Ops Manager API...
   Found 599 total properties
-  Currently configured: 156
+  Configurable: 184
+  Currently configured: ~156
 
-Analyzing changes...
+Generating actionable report...
+
+================================================================================
+                        TAS Tile Upgrade Analysis
+================================================================================
+
+Old Version: /Users/user/.tile-diff/cache/srt-6.0.22.pivotal
+New Version: /Users/user/.tile-diff/cache/srt-10.2.5.pivotal
 
 Total Changes: 12
   Required Actions: 2
@@ -95,59 +223,46 @@ Total Changes: 12
 🚨 REQUIRED ACTIONS
 ================================================================================
 
+These changes MUST be addressed before upgrading:
+
 1. .properties.new_security_setting
    Type: boolean
-   Status: New required property (no default)
-   Current: Not set
    Action: Must configure this property before upgrading
-   Recommendation: Set to 'true' for enhanced security
 
 2. .properties.authentication_method
    Type: selector
-   Status: Type changed from string to selector
-   Current: "basic"
-   Action: Update to use new selector format
-   Recommendation: Choose 'oauth' option for modern authentication
+   Action: Must configure this property before upgrading
 
 ================================================================================
 ⚠️  WARNINGS
 ================================================================================
 
+These changes should be reviewed:
+
 3. .properties.deprecated_timeout
-   Type: integer
-   Status: Removed in new version
-   Current: 30
-   Action: Property will be ignored after upgrade
-   Recommendation: Review if this setting impacts your deployment
+   Change: Property removed in new version
+   Recommendation: Property will be ignored after upgrade - review and remove from config
 
 4. .properties.memory_limit
-   Type: integer
-   Status: Constraints changed (min: 512 → 1024)
-   Current: 768
-   Action: Current value 768 is below new minimum 1024
-   Recommendation: Update to at least 1024 MB
+   Change: Constraints changed
+   Recommendation: Review this change and verify compatibility
 
 ================================================================================
 ℹ️  INFORMATIONAL
 ================================================================================
 
+New optional features available:
+
 5. .properties.new_optional_feature
    Type: boolean
-   Status: New optional property
-   Current: Not set
    Default: false
-   Recommendation: Enable for improved logging capabilities
+   Note: Optional - review for potential improvements
 
 6. .properties.enhanced_monitoring
    Type: string
-   Status: New optional property
-   Current: Not set
-   Default: "basic"
-   Recommendation: Consider 'advanced' for production environments
+   Default: basic
+   Note: Optional - review for potential improvements
 
-================================================================================
-Summary: 2 required actions must be completed before upgrade
-================================================================================
 ```
 
 ## Development
@@ -158,6 +273,7 @@ Summary: 2 required actions must be completed before upgrade
 - `om` CLI (Ops Manager CLI)
 - Access to product tile `.pivotal` files
 - Access to Ops Manager API (for current config comparison)
+- Ginkgo v2 (for running acceptance tests)
 
 ### Setup
 
@@ -169,12 +285,73 @@ cd tile-diff
 # Install dependencies
 go mod download
 
+# Install Ginkgo (if not already installed)
+go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
 # Build
 make build
 
-# Run tests
+# Run unit tests
 make test
+
+# Run acceptance tests (requires PIVNET_TOKEN)
+export PIVNET_TOKEN="your-pivnet-api-token"
+make acceptance-test
+
+# Run all tests (unit + acceptance)
+make test-all
 ```
+
+### Running Tests
+
+The project includes comprehensive test coverage at multiple levels:
+
+#### Unit Tests
+
+Unit tests cover individual packages and run without external dependencies:
+
+```bash
+# Run all unit tests with coverage
+make test
+
+# Generate HTML coverage report
+make test-coverage
+
+# Run tests for a specific package
+go test -v ./pkg/compare/...
+```
+
+#### Acceptance Tests
+
+Acceptance tests use Ginkgo v2 and verify end-to-end functionality against live Pivnet:
+
+```bash
+# Set your Pivnet API token
+export PIVNET_TOKEN="your-pivnet-api-token"
+
+# Run Ginkgo acceptance tests
+make acceptance-test
+
+# Or run Ginkgo directly with verbose output
+ginkgo -v ./test
+
+# Run specific test suites
+ginkgo -v --focus="Cache Verification" ./test
+ginkgo -v --focus="EULA Handling" ./test
+```
+
+**Note:** Acceptance tests require a valid `PIVNET_TOKEN` environment variable. Tests will be skipped if the token is not set.
+
+#### Integration Tests
+
+Integration tests use real tile files and are tagged separately:
+
+```bash
+# Run integration tests (requires actual tile files)
+go test -v -tags=integration ./test/...
+```
+
+See [test/README.md](test/README.md) for detailed documentation on test structure and organization.
 
 ### Project Structure
 

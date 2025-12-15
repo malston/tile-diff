@@ -550,7 +550,7 @@ jobs:
 ### Q: How do I get the `.pivotal` files?
 
 **A**: Download from Tanzu Network (formerly Pivotal Network):
-1. Log in to https://network.tanzu.vmware.com
+1. Log in to the Broadcom Support Portal: https://support.broadcom.com/
 2. Navigate to your product (e.g., Tanzu Application Service)
 3. Select version and download `.pivotal` file
 
