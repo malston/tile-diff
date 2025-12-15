@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/gomega"
 )
@@ -32,11 +33,45 @@ func getEnvOrDefault(key, defaultVal string) string {
 
 // runTileDiff executes the tile-diff binary with given arguments
 func runTileDiff(args ...string) (string, error) {
+	return runTileDiffWithEnv(nil, args...)
+}
+
+// runTileDiffWithEnv executes the tile-diff binary with custom environment overrides
+func runTileDiffWithEnv(envOverrides map[string]string, args ...string) (string, error) {
 	cmd := exec.Command(tileDiffBin, args...)
-	cmd.Env = append(os.Environ(),
+
+	// Start with base environment
+	env := append([]string{},
 		fmt.Sprintf("PIVNET_CACHE_DIR=%s", testCacheDir),
 		fmt.Sprintf("PIVNET_EULA_FILE=%s", testEULAFile),
 	)
+
+	// Add environment variables, but skip PIVNET_TOKEN if it will be overridden
+	skipVars := make(map[string]bool)
+	for k := range envOverrides {
+		skipVars[k] = true
+	}
+
+	for _, envVar := range os.Environ() {
+		// Skip variables that will be overridden
+		isSkip := false
+		for skipVar := range skipVars {
+			if strings.HasPrefix(envVar, skipVar+"=") {
+				isSkip = true
+				break
+			}
+		}
+		if !isSkip {
+			env = append(env, envVar)
+		}
+	}
+
+	// Apply overrides
+	for k, v := range envOverrides {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	cmd.Env = env
 	output, err := cmd.CombinedOutput()
 	return string(output), err
 }

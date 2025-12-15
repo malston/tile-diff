@@ -278,7 +278,9 @@ var _ = Describe("Pivnet Integration", func() {
 		// NOTE: Tests proper error messages for invalid inputs and failure scenarios
 
 		It("fails with meaningful error for invalid Pivnet token", func() {
-			output, err := runTileDiff(
+			// Unset PIVNET_TOKEN env var to ensure the invalid token from --pivnet-token flag is used
+			output, err := runTileDiffWithEnv(
+				map[string]string{"PIVNET_TOKEN": ""},
 				"--product-slug", "harbor-container-registry",
 				"--old-version", "2.10.2",
 				"--new-version", "2.10.3",
