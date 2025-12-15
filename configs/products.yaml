@@ -1,8 +1,7 @@
 # Tanzu Application Service (Cloud Foundry)
-cf: "https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-application-service/{version}/release-notes.html"
+cf: "https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/elastic-application-runtime/{version}/runtime-rn.html"
 
 # Tanzu Data Solutions
-p-mysql: "https://techdocs.broadcom.com/us/en/vmware-tanzu/data-solutions/tanzu-sql-mysql/{version}/release-notes.html"
-p-rabbitmq: "https://techdocs.broadcom.com/us/en/vmware-tanzu/data-solutions/tanzu-rabbitmq/{version}/release-notes.html"
-
-# Add more products as needed
+p-mysql: "https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-mysql-tanzu-platform/{version}/mysql-tp/release-notes.html"
+p-rabbitmq: "https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-rabbitmq-tanzu-platform/{version}/rabbitmq-tp/releases.html"
+p-redis: "https://techdocs.broadcom.com/us/en/vmware-tanzu/platform/tanzu-valkey-tanzu-platform/{version}/valkey-tp/release.html"
