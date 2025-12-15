@@ -34,7 +34,7 @@ var _ = Describe("Pivnet Integration", func() {
 		// against live Pivnet data like the bash acceptance tests do.
 		// Update the product-slug and versions as needed to match available releases.
 
-		It("downloads tiles with exact versions and all required flags", func() {
+		It("downloads tiles with exact versions and all required flags", Label("slow", "downloads"), func() {
 			output, err := runTileDiff(
 				"--product-slug", "p-redis",
 				"--old-version", "3.2.0",
@@ -65,7 +65,7 @@ var _ = Describe("Pivnet Integration", func() {
 			))
 		})
 
-		It("supports JSON output format", func() {
+		It("supports JSON output format", Label("slow", "downloads"), func() {
 			output, err := runTileDiff(
 				"--product-slug", "p-redis",
 				"--old-version", "3.2.0",
@@ -95,7 +95,7 @@ var _ = Describe("Pivnet Integration", func() {
 		// NOTE: These tests verify that tile downloads are cached and reused
 		// on subsequent runs to avoid unnecessary Pivnet downloads.
 
-		It("stores downloaded tiles in cache", func() {
+		It("stores downloaded tiles in cache", Label("slow", "downloads"), func() {
 			// First download - should populate cache
 			output, err := runTileDiff(
 				"--product-slug", "p-redis",
@@ -131,7 +131,7 @@ var _ = Describe("Pivnet Integration", func() {
 			Expect(tileCount).To(BeNumerically(">=", 2), "Cache should contain at least 2 tile files")
 		})
 
-		It("reuses cached tiles on subsequent runs", func() {
+		It("reuses cached tiles on subsequent runs", Label("slow", "downloads"), func() {
 			// First run to populate cache
 			_, err := runTileDiff(
 				"--product-slug", "p-redis",
@@ -224,7 +224,7 @@ var _ = Describe("Pivnet Integration", func() {
 			), "Error should mention EULA requirement")
 		})
 
-		It("persists EULA acceptance for subsequent downloads", func() {
+		It("persists EULA acceptance for subsequent downloads", Label("slow", "downloads"), func() {
 			// First run with --accept-eula
 			output, err := runTileDiff(
 				"--product-slug", "p-redis",
@@ -333,7 +333,7 @@ var _ = Describe("Pivnet Integration", func() {
 		})
 	})
 
-	Describe("Local Files Mode", func() {
+	Describe("Local Files Mode", Label("slow", "downloads"), func() {
 		// NOTE: Tests backward compatibility with local tile file comparison
 
 		var oldTilePath, newTilePath string
