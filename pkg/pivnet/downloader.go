@@ -125,18 +125,26 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 		// Note: This only works for VMware/Broadcom employees
 		err := d.client.AcceptEULA(opts.ProductSlug, release.ID)
 		if err != nil {
-			// API acceptance failed - user must accept manually via web
-			fmt.Printf("\n⚠️  EULA must be accepted manually\n")
-			fmt.Printf("API EULA acceptance is only available for Broadcom/VMware employees.\n")
-			fmt.Printf("\nPlease:\n")
-			fmt.Printf("1. Open this URL in your browser: %s\n", eulaURL)
-			fmt.Printf("2. Accept the EULA\n")
-			fmt.Printf("3. Press Enter here to continue...\n\n")
-			fmt.Scanln()
+			// API acceptance failed - handle based on interactive mode
+			if opts.NonInteractive {
+				// Non-interactive: Assume user has manually accepted EULA via web
+				// Mark as accepted locally and proceed (download will fail if not actually accepted)
+				d.eula.Accept(opts.ProductSlug, release.Version, eulaURL)
+				fmt.Printf("Note: API EULA acceptance unavailable. Proceeding with download...\n")
+			} else {
+				// Interactive: Prompt user to accept manually via web
+				fmt.Printf("\n⚠️  EULA must be accepted manually\n")
+				fmt.Printf("API EULA acceptance is only available for Broadcom/VMware employees.\n")
+				fmt.Printf("\nPlease:\n")
+				fmt.Printf("1. Open this URL in your browser: %s\n", eulaURL)
+				fmt.Printf("2. Accept the EULA\n")
+				fmt.Printf("3. Press Enter here to continue...\n\n")
+				fmt.Scanln()
 
-			// Don't mark as accepted yet - let the download verify it
-			// If the download succeeds, we'll mark it then
-			fmt.Printf("Proceeding with download (EULA acceptance will be verified)...\n")
+				// Don't mark as accepted yet - let the download verify it
+				// If the download succeeds, we'll mark it then
+				fmt.Printf("Proceeding with download (EULA acceptance will be verified)...\n")
+			}
 		} else {
 			// API acceptance succeeded (Broadcom/VMware employee)
 			d.eula.Accept(opts.ProductSlug, release.Version, eulaURL)
