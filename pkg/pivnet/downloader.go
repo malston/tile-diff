@@ -194,6 +194,11 @@ func (d *Downloader) Download(opts DownloadOptions) (string, error) {
 		return "", err
 	}
 
+	// Verify temp file exists before attempting rename
+	if _, err := os.Stat(tempPath); err != nil {
+		return "", fmt.Errorf("downloaded temp file missing before rename: %w", err)
+	}
+
 	// Move to final location
 	if err := os.Rename(tempPath, targetPath); err != nil {
 		os.Remove(tempPath)
@@ -233,6 +238,20 @@ func (d *Downloader) downloadFile(productSlug string, releaseID, fileID int, tar
 	err = d.client.DownloadFile(productSlug, releaseID, fileID, out, bar)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
+	}
+
+	// Sync file to disk before closing
+	if err := out.Sync(); err != nil {
+		return fmt.Errorf("failed to sync file to disk: %w", err)
+	}
+
+	// Verify file size matches expected
+	fileInfo, err := out.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to stat downloaded file: %w", err)
+	}
+	if fileInfo.Size() != fileSize {
+		return fmt.Errorf("downloaded file size mismatch: expected %d bytes, got %d bytes", fileSize, fileInfo.Size())
 	}
 
 	return nil
