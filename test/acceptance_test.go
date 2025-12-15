@@ -28,7 +28,7 @@ var _ = Describe("Pivnet Integration", func() {
 	})
 
 	Describe("Non-Interactive Mode", func() {
-		// NOTE: These tests use p-redis 3.2.0 -> 3.2.1 as examples.
+		// NOTE: These tests use harbor-container-registry 2.10.2 -> 2.10.3 as examples.
 		// If these specific versions are no longer available in Pivnet, the tests
 		// will fail. This is expected behavior - the tests are designed to work
 		// against live Pivnet data like the bash acceptance tests do.
@@ -36,10 +36,10 @@ var _ = Describe("Pivnet Integration", func() {
 
 		It("downloads tiles with exact versions and all required flags", Label("slow", "downloads"), func() {
 			output, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--accept-eula",
 				"--non-interactive",
@@ -67,10 +67,10 @@ var _ = Describe("Pivnet Integration", func() {
 
 		It("supports JSON output format", Label("slow", "downloads"), func() {
 			output, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--accept-eula",
 				"--non-interactive",
@@ -98,10 +98,10 @@ var _ = Describe("Pivnet Integration", func() {
 		It("stores downloaded tiles in cache", Label("slow", "downloads"), func() {
 			// First download - should populate cache
 			output, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--accept-eula",
 				"--non-interactive",
@@ -134,10 +134,10 @@ var _ = Describe("Pivnet Integration", func() {
 		It("reuses cached tiles on subsequent runs", Label("slow", "downloads"), func() {
 			// First run to populate cache
 			_, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--accept-eula",
 				"--non-interactive",
@@ -160,10 +160,10 @@ var _ = Describe("Pivnet Integration", func() {
 
 			// Second run - should use cache
 			output, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--accept-eula",
 				"--non-interactive",
@@ -200,10 +200,10 @@ var _ = Describe("Pivnet Integration", func() {
 		It("requires EULA acceptance for first download", func() {
 			// Try without --accept-eula flag (should fail in non-interactive mode)
 			output, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--non-interactive",
 			)
@@ -227,10 +227,10 @@ var _ = Describe("Pivnet Integration", func() {
 		It("persists EULA acceptance for subsequent downloads", Label("slow", "downloads"), func() {
 			// First run with --accept-eula
 			output, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--accept-eula",
 				"--non-interactive",
@@ -245,10 +245,10 @@ var _ = Describe("Pivnet Integration", func() {
 
 			// Second run WITHOUT --accept-eula (should work because EULA is remembered)
 			output, err = runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--non-interactive",
 			)
@@ -266,10 +266,10 @@ var _ = Describe("Pivnet Integration", func() {
 
 		It("fails with meaningful error for invalid Pivnet token", func() {
 			output, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", "invalid-token-12345",
 				"--accept-eula",
 				"--non-interactive",
@@ -341,10 +341,10 @@ var _ = Describe("Pivnet Integration", func() {
 		BeforeEach(func() {
 			// Download tiles to use as local test files
 			output, err := runTileDiff(
-				"--product-slug", "p-redis",
-				"--old-version", "3.2.0",
-				"--new-version", "3.2.1",
-				"--product-file", "Redis for VMware Tanzu Application Service",
+				"--product-slug", "harbor-container-registry",
+				"--old-version", "2.10.2",
+				"--new-version", "2.10.3",
+				"--product-file", "VMware Harbor Container Registry for Tanzu",
 				"--pivnet-token", os.Getenv("PIVNET_TOKEN"),
 				"--accept-eula",
 				"--non-interactive",
@@ -362,10 +362,10 @@ var _ = Describe("Pivnet Integration", func() {
 			Expect(err).NotTo(HaveOccurred(), "Should be able to read cache directory")
 
 			for _, file := range files {
-				if strings.Contains(file.Name(), "3.2.0") && strings.HasSuffix(file.Name(), ".pivotal") {
+				if strings.Contains(file.Name(), "2.10.2") && strings.HasSuffix(file.Name(), ".pivotal") {
 					oldTilePath = fmt.Sprintf("%s/%s", testCacheDir, file.Name())
 				}
-				if strings.Contains(file.Name(), "3.2.1") && strings.HasSuffix(file.Name(), ".pivotal") {
+				if strings.Contains(file.Name(), "2.10.3") && strings.HasSuffix(file.Name(), ".pivotal") {
 					newTilePath = fmt.Sprintf("%s/%s", testCacheDir, file.Name())
 				}
 			}
