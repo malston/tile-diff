@@ -243,7 +243,7 @@ func main() {
 		}
 
 		// Get minimum free space requirement from env var or use default
-		minFreeSpaceGB := int64(5) // Default: 5GB
+		minFreeSpaceGB := int64(10) // Default: 10GB (most tiles < 5GB, some > 10GB)
 		if envSpace := os.Getenv("PIVNET_MIN_FREE_SPACE_GB"); envSpace != "" {
 			if parsed, err := strconv.ParseInt(envSpace, 10, 64); err == nil && parsed > 0 {
 				minFreeSpaceGB = parsed
