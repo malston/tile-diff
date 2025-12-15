@@ -33,6 +33,7 @@ jobs:
     - name: Run acceptance tests (Ginkgo)
       env:
         PIVNET_TOKEN: ${{ secrets.PIVNET_TOKEN }}
+        PIVNET_MIN_FREE_SPACE_GB: "2"  # Lower requirement for CI tests (default: 5GB)
         # ENABLE_DOWNLOAD_TESTS: "1"  # Uncomment to run all 12 tests (slower, downloads tiles)
       run: |
         go build -v ./cmd/tile-diff
@@ -63,7 +64,7 @@ jobs:
     - name: Build binary
       run: |
         go build -v -o bin/tile-diff ./cmd/tile-diff
-        ./bin/tile-diff --version || echo "Version command not implemented yet"
+        ./bin/tile-diff --version
 
     - name: Test binary runs
       run: |

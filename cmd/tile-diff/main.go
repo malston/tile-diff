@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/malston/tile-diff/pkg/api"
@@ -241,6 +242,14 @@ func main() {
 			os.Exit(1)
 		}
 
+		// Get minimum free space requirement from env var or use default
+		minFreeSpaceGB := int64(5) // Default: 5GB
+		if envSpace := os.Getenv("PIVNET_MIN_FREE_SPACE_GB"); envSpace != "" {
+			if parsed, err := strconv.ParseInt(envSpace, 10, 64); err == nil && parsed > 0 {
+				minFreeSpaceGB = parsed
+			}
+		}
+
 		if *reportFormat != "json" {
 			fmt.Printf("tile-diff - Ops Manager Product Tile Comparison\n")
 			fmt.Printf("================================================\n\n")
@@ -275,7 +284,7 @@ func main() {
 		}
 
 		// Create downloader (quiet mode in JSON to suppress progress output)
-		downloader := pivnet.NewDownloader(client, cacheDirectory, manifestFile, eulaFile, 20, jsonMode)
+		downloader := pivnet.NewDownloader(client, cacheDirectory, manifestFile, eulaFile, minFreeSpaceGB, jsonMode)
 
 		// Download old tile
 		if !jsonMode {
