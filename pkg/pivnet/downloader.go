@@ -7,8 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
-	"github.com/schollz/progressbar/v3"
 )
 
 // Downloader orchestrates file downloads
@@ -232,17 +230,15 @@ func (d *Downloader) downloadFile(productSlug string, releaseID, fileID int, tar
 	defer out.Close()
 
 	// Create progress writer (suppress if quiet mode)
+	// The SDK has its own progress bar (cheggaaa/pb) that outputs formatted text
 	var progressWriter io.Writer
 	if d.quiet {
 		progressWriter = io.Discard
 	} else {
-		progressWriter = progressbar.DefaultBytes(
-			fileSize,
-			"downloading",
-		)
+		progressWriter = os.Stderr
 	}
 
-	// Download file - SDK expects *os.File and a separate progress writer
+	// Download file - SDK's built-in progress bar will display to progressWriter
 	err = d.client.DownloadFile(productSlug, releaseID, fileID, out, progressWriter)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)

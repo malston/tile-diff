@@ -121,12 +121,18 @@ func buildReleaseOptions(releases []Release) []string {
 func buildProductFileOptions(files []ProductFile) []string {
 	options := make([]string, len(files))
 	for i, f := range files {
-		sizeStr := formatBytes(f.Size)
 		recommended := ""
 		if f.Name == "TAS for VMs" {
 			recommended = " [Recommended]"
 		}
-		options[i] = fmt.Sprintf("%s (%s)%s", f.Name, sizeStr, recommended)
+
+		// Only show size if it's available (ListForRelease doesn't return sizes)
+		if f.Size > 0 {
+			sizeStr := formatBytes(f.Size)
+			options[i] = fmt.Sprintf("%s (%s)%s", f.Name, sizeStr, recommended)
+		} else {
+			options[i] = fmt.Sprintf("%s%s", f.Name, recommended)
+		}
 	}
 	return options
 }
