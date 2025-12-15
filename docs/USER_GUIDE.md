@@ -143,6 +143,52 @@ Generate machine-readable output for CI/CD pipelines:
 
 **Use case**: Automated upgrade readiness checks in CI/CD workflows.
 
+### Scenario 4: Auto-Detect Product GUID
+
+Let tile-diff automatically find your product GUID from Ops Manager:
+
+```bash
+./tile-diff \
+  --product-slug harbor-container-registry \
+  --old-version 2.11.0 \
+  --new-version 2.13.2 \
+  --ops-manager-url https://opsman.tas.vcf.lab \
+  --username admin \
+  --password your-password \
+  --skip-ssl-validation
+```
+
+**How it works**:
+1. Queries Ops Manager API for all staged products
+2. Matches the product slug to find the GUID
+3. Uses that GUID to fetch current configuration
+4. Generates filtered, actionable report
+
+**Use case**: Simplify workflows when you know the product slug but not the GUID.
+
+### Scenario 5: Formatted Report Without Credentials
+
+Get professional upgrade analysis even without Ops Manager access:
+
+```bash
+./tile-diff \
+  --old-tile /path/to/harbor-2.11.0.pivotal \
+  --new-tile /path/to/harbor-2.13.2.pivotal
+```
+
+**Output**: Same professional "TAS Tile Upgrade Analysis" format showing:
+- Total changes summary
+- Required Actions (properties that must be configured)
+- Warnings (properties to review)
+- Informational (optional new features)
+
+**Difference from full analysis**:
+- Shows ALL potential changes (no filtering by current config)
+- Useful for initial assessment before accessing Ops Manager
+- Perfect for offline analysis or planning sessions
+
+**Use case**: Initial upgrade assessment, offline planning, or when Ops Manager access is restricted.
+
 ## Command-Line Reference
 
 ### Required Flags

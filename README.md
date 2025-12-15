@@ -20,6 +20,8 @@ This tool automates that analysis by comparing tile metadata and cross-referenci
 - **CI-Friendly**: Non-interactive mode for automated workflows
 - **Smart Property Comparison**: Automatically detects new, removed, and changed properties between tile versions
 - **Current Config Analysis**: Cross-references changes with your actual Ops Manager configuration
+- **Auto-Detect Product GUID**: Automatically finds product GUID from Ops Manager using product slug
+- **Formatted Reports Always**: Get professional upgrade analysis reports even without Ops Manager credentials
 - **Intelligent Categorization**: Classifies changes as Required Actions, Warnings, or Informational
 - **Actionable Recommendations**: Provides specific guidance for each configuration change
 - **Multiple Output Formats**: Human-readable text reports and machine-readable JSON
@@ -82,17 +84,38 @@ If you've already downloaded tiles:
 
 #### Compare with Current Ops Manager Config
 
+**Option 1: Auto-detect product GUID (Recommended)**
 ```bash
 ./tile-diff \
-  --product-slug cf \
-  --old-version 6.0.22 \
-  --new-version 10.2.5 \
-  --product-guid cf-xxxxx \
+  --product-slug harbor-container-registry \
+  --old-version 2.11.0 \
+  --new-version 2.13.2 \
   --ops-manager-url https://opsman.tas.vcf.lab \
   --username admin \
   --password your-password \
   --skip-ssl-validation
 ```
+The tool will automatically query Ops Manager to find the product GUID based on the product slug.
+
+**Option 2: Explicit product GUID**
+```bash
+./tile-diff \
+  --old-tile srt-6.0.22.pivotal \
+  --new-tile srt-10.2.5.pivotal \
+  --product-guid cf-abc123xyz \
+  --ops-manager-url https://opsman.tas.vcf.lab \
+  --username admin \
+  --password your-password \
+  --skip-ssl-validation
+```
+
+**Option 3: Formatted report without credentials**
+```bash
+./tile-diff \
+  --old-tile harbor-2.11.0.pivotal \
+  --new-tile harbor-2.13.2.pivotal
+```
+Even without Ops Manager credentials, you'll get a professional formatted upgrade analysis report showing all potential changes.
 
 #### JSON Output
 

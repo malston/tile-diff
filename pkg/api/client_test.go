@@ -145,3 +145,137 @@ func TestGetPropertiesHTTPError(t *testing.T) {
 		t.Error("Expected error for 401 response")
 	}
 }
+
+func TestGetStagedProducts(t *testing.T) {
+	// Mock API server
+	mockResponse := []StagedProduct{
+		{
+			GUID: "cf-abc123xyz",
+			Type: "cf",
+		},
+		{
+			GUID: "harbor-container-registry-252c73c039a1553d111d",
+			Type: "harbor-container-registry",
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Handle UAA token endpoint
+		if r.URL.Path == "/uaa/oauth/token" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]string{
+				"access_token": "test-token-12345",
+				"token_type":   "bearer",
+			})
+			return
+		}
+
+		// Handle staged products endpoint
+		if r.URL.Path != "/api/v0/staged/products" {
+			t.Errorf("Unexpected path: %s", r.URL.Path)
+		}
+		if r.Method != "GET" {
+			t.Errorf("Unexpected method: %s", r.Method)
+		}
+
+		// Check bearer token auth
+		authHeader := r.Header.Get("Authorization")
+		if authHeader != "Bearer test-token-12345" {
+			t.Errorf("Expected bearer token auth, got: %s", authHeader)
+		}
+
+		// Return mock response
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(mockResponse)
+	}))
+	defer server.Close()
+
+	// Test client
+	client := NewClient(server.URL, "admin", "password", true)
+	products, err := client.GetStagedProducts()
+	if err != nil {
+		t.Fatalf("GetStagedProducts failed: %v", err)
+	}
+
+	if len(products) != 2 {
+		t.Errorf("Expected 2 products, got %d", len(products))
+	}
+
+	// Verify first product
+	if products[0].GUID != "cf-abc123xyz" {
+		t.Errorf("Expected GUID 'cf-abc123xyz', got '%s'", products[0].GUID)
+	}
+	if products[0].Type != "cf" {
+		t.Errorf("Expected Type 'cf', got '%s'", products[0].Type)
+	}
+
+	// Verify second product
+	if products[1].Type != "harbor-container-registry" {
+		t.Errorf("Expected Type 'harbor-container-registry', got '%s'", products[1].Type)
+	}
+}
+
+func TestFindProductGUID(t *testing.T) {
+	// Mock API server
+	mockResponse := []StagedProduct{
+		{
+			GUID: "cf-abc123xyz",
+			Type: "cf",
+		},
+		{
+			GUID: "harbor-container-registry-252c73c039a1553d111d",
+			Type: "harbor-container-registry",
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Handle UAA token endpoint
+		if r.URL.Path == "/uaa/oauth/token" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]string{
+				"access_token": "test-token-12345",
+				"token_type":   "bearer",
+			})
+			return
+		}
+
+		// Handle staged products endpoint
+		if r.URL.Path == "/api/v0/staged/products" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(mockResponse)
+			return
+		}
+	}))
+	defer server.Close()
+
+	// Test client
+	client := NewClient(server.URL, "admin", "password", true)
+
+	// Test finding existing product
+	guid, err := client.FindProductGUID("harbor-container-registry")
+	if err != nil {
+		t.Fatalf("FindProductGUID failed: %v", err)
+	}
+	if guid != "harbor-container-registry-252c73c039a1553d111d" {
+		t.Errorf("Expected GUID 'harbor-container-registry-252c73c039a1553d111d', got '%s'", guid)
+	}
+
+	// Test finding another product
+	guid, err = client.FindProductGUID("cf")
+	if err != nil {
+		t.Fatalf("FindProductGUID failed for cf: %v", err)
+	}
+	if guid != "cf-abc123xyz" {
+		t.Errorf("Expected GUID 'cf-abc123xyz', got '%s'", guid)
+	}
+
+	// Test product not found
+	_, err = client.FindProductGUID("nonexistent-product")
+	if err == nil {
+		t.Error("Expected error for nonexistent product")
+	}
+	expectedError := "no staged product found with type 'nonexistent-product'"
+	if err.Error() != expectedError {
+		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
+	}
+}

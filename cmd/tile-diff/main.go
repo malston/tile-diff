@@ -189,19 +189,21 @@ func main() {
 
 	// Detect mode: local files or Pivnet download
 	usingLocalFiles := *oldTile != "" || *newTile != ""
-	usingPivnet := *productSlug != "" || *oldVersion != "" || *newVersion != ""
+	usingPivnetDownload := (*oldVersion != "" || *newVersion != "") && *productSlug != ""
 
-	if usingLocalFiles && usingPivnet {
-		fmt.Fprintf(os.Stderr, "Error: Cannot mix local and Pivnet modes\n")
+	// Don't allow mixing local tile paths with Pivnet version flags
+	if usingLocalFiles && usingPivnetDownload {
+		fmt.Fprintf(os.Stderr, "Error: Cannot mix local tile files with Pivnet download versions\n")
 		fmt.Fprintf(os.Stderr, "Use either:\n")
 		fmt.Fprintf(os.Stderr, "  --old-tile + --new-tile (local files)\n")
 		fmt.Fprintf(os.Stderr, "OR\n")
-		fmt.Fprintf(os.Stderr, "  --product-slug + --old-version + --new-version (Pivnet download)\n\n")
+		fmt.Fprintf(os.Stderr, "  --product-slug + --old-version + --new-version (Pivnet download)\n")
+		fmt.Fprintf(os.Stderr, "\nNote: --product-slug can be used with local files for auto-detecting product GUID\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	if !usingLocalFiles && !usingPivnet {
+	if !usingLocalFiles && !usingPivnetDownload {
 		fmt.Fprintf(os.Stderr, "Error: Must provide either local files or Pivnet download options\n\n")
 		flag.Usage()
 		os.Exit(1)
@@ -209,7 +211,7 @@ func main() {
 
 	var oldTilePath, newTilePath string
 
-	if usingPivnet {
+	if usingPivnetDownload {
 		// Validate Pivnet flags
 		if *productSlug == "" || *oldVersion == "" || *newVersion == "" {
 			fmt.Fprintf(os.Stderr, "Error: Pivnet mode requires --product-slug, --old-version, and --new-version\n\n")
@@ -522,14 +524,35 @@ func main() {
 		}
 	}
 
+	// Auto-detect product GUID if not provided but credentials are available
+	effectiveProductGUID := *productGUID
+	if effectiveProductGUID == "" && *productSlug != "" && *opsManagerURL != "" && *username != "" && *password != "" {
+		if !jsonMode {
+			fmt.Printf("\nAuto-detecting product GUID for '%s'...\n", *productSlug)
+		}
+		client := api.NewClient(*opsManagerURL, *username, *password, *skipSSL)
+		detectedGUID, err := client.FindProductGUID(*productSlug)
+		if err != nil {
+			if *verbose {
+				fmt.Fprintf(os.Stderr, "Warning: Could not auto-detect product GUID: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Continuing without current config analysis...\n\n")
+			}
+		} else {
+			effectiveProductGUID = detectedGUID
+			if !jsonMode {
+				fmt.Printf("  Detected GUID: %s\n", effectiveProductGUID)
+			}
+		}
+	}
+
 	// Load current configuration if API credentials provided
-	if *productGUID != "" && *opsManagerURL != "" && *username != "" && *password != "" {
+	if effectiveProductGUID != "" && *opsManagerURL != "" && *username != "" && *password != "" {
 		if !jsonMode {
 			fmt.Printf("\nQuerying Ops Manager API...\n")
 		}
 		client := api.NewClient(*opsManagerURL, *username, *password, *skipSSL)
 
-		properties, err := client.GetProperties(*productGUID)
+		properties, err := client.GetProperties(effectiveProductGUID)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error fetching properties from Ops Manager: %v\n", err)
 			os.Exit(1)
@@ -584,12 +607,39 @@ func main() {
 			}
 			fmt.Println(textReport)
 		}
-	} else if *productGUID != "" {
-		fmt.Printf("\nSkipping Ops Manager API (credentials not provided)\n")
-		fmt.Printf("To include current configuration, provide:\n")
-		fmt.Printf("  --ops-manager-url, --username, --password\n")
 	} else {
-		fmt.Println("\nNote: Provide Ops Manager credentials for actionable report with current config analysis")
+		// Generate formatted report without Ops Manager API
+		if !jsonMode {
+			fmt.Printf("\nGenerating upgrade analysis report...\n")
+			if effectiveProductGUID == "" && *opsManagerURL != "" {
+				fmt.Printf("Note: Showing all changes (no current config filtering)\n")
+				fmt.Printf("      Provide --product-guid for filtered report based on your deployment\n")
+			} else if effectiveProductGUID == "" {
+				fmt.Printf("Note: Showing all changes (no current config filtering)\n")
+				fmt.Printf("      Provide Ops Manager credentials for filtered report\n")
+			}
+		}
+
+		// Categorize all changes (without filtering by current config)
+		categorized := report.CategorizeChanges(results)
+
+		// Generate report based on format
+		fmt.Println()
+		switch *reportFormat {
+		case "json":
+			jsonReport := report.GenerateJSONReport(categorized, oldTilePath, newTilePath)
+			fmt.Println(jsonReport)
+		default:
+			// Use enriched report if we have matches
+			var textReport string
+			if len(matches) > 0 {
+				enriched := report.EnrichChanges(categorized, matches)
+				textReport = report.GenerateTextReportWithFeatures(enriched, oldTilePath, newTilePath)
+			} else {
+				textReport = report.GenerateTextReport(categorized, oldTilePath, newTilePath)
+			}
+			fmt.Println(textReport)
+		}
 	}
 }
 
