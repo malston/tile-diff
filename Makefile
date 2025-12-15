@@ -1,8 +1,11 @@
 .PHONY: build test acceptance-test acceptance-test-with-token acceptance-test-fast acceptance-test-fast-with-token clean install lint fmt vet
 
+# Get version from git tags, or use "dev" if not on a tag
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+
 # Build the binary
 build:
-	go build -o tile-diff ./cmd/tile-diff
+	go build -ldflags "-X main.version=$(VERSION)" -o tile-diff ./cmd/tile-diff
 
 # Run unit tests
 test:

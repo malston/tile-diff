@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/malston/tile-diff/pkg/api"
@@ -17,6 +18,9 @@ import (
 	"github.com/malston/tile-diff/pkg/releasenotes"
 	"github.com/malston/tile-diff/pkg/report"
 )
+
+// version is set via ldflags during build
+var version = "dev"
 
 // EnrichmentResult contains the results of release notes enrichment
 type EnrichmentResult struct {
@@ -181,8 +185,15 @@ func main() {
 	productConfig := flag.String("product-config", "configs/products.yaml", "Path to product config file")
 	verbose := flag.Bool("verbose", false, "Enable verbose output")
 	debugMatching := flag.Bool("debug-matching", false, "Show detailed property-to-feature matching information")
+	showVersion := flag.Bool("version", false, "Show version information")
 
 	flag.Parse()
+
+	// Handle version flag
+	if *showVersion {
+		fmt.Printf("tile-diff version %s\n", version)
+		os.Exit(0)
+	}
 
 	// Track if we're in JSON mode to suppress non-JSON output
 	jsonMode := *reportFormat == "json"
@@ -231,6 +242,14 @@ func main() {
 			os.Exit(1)
 		}
 
+		// Get minimum free space requirement from env var or use default
+		minFreeSpaceGB := int64(10) // Default: 10GB (most tiles < 5GB, some > 10GB)
+		if envSpace := os.Getenv("PIVNET_MIN_FREE_SPACE_GB"); envSpace != "" {
+			if parsed, err := strconv.ParseInt(envSpace, 10, 64); err == nil && parsed > 0 {
+				minFreeSpaceGB = parsed
+			}
+		}
+
 		if *reportFormat != "json" {
 			fmt.Printf("tile-diff - Ops Manager Product Tile Comparison\n")
 			fmt.Printf("================================================\n\n")
@@ -265,7 +284,7 @@ func main() {
 		}
 
 		// Create downloader (quiet mode in JSON to suppress progress output)
-		downloader := pivnet.NewDownloader(client, cacheDirectory, manifestFile, eulaFile, 20, jsonMode)
+		downloader := pivnet.NewDownloader(client, cacheDirectory, manifestFile, eulaFile, minFreeSpaceGB, jsonMode)
 
 		// Download old tile
 		if !jsonMode {
