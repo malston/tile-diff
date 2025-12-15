@@ -96,8 +96,21 @@ ginkgo -v --label-filter='!slow' ./test
 ### Environment Variables
 
 - `PIVNET_TOKEN` - Required for acceptance tests that download from Pivnet
+- `ENABLE_DOWNLOAD_TESTS` - Set to `1` to enable expensive download tests (⚠️ downloads multi-GB files)
 - `TILE_DIFF_BIN` - Path to tile-diff binary (default: `./tile-diff`)
 - `TEST_CACHE_DIR` - Cache directory for test runs (default: `/tmp/tile-diff-test-cache`)
+
+**⚠️ Download Tests Warning:**
+Download tests are **SKIPPED by default** to prevent:
+- ISP bandwidth quota consumption
+- CI/CD pipeline slowdowns
+- Expensive Pivnet API usage
+
+Only enable when specifically testing download functionality:
+```bash
+export ENABLE_DOWNLOAD_TESTS=1
+make acceptance-test
+```
 
 ### Test Helpers
 
