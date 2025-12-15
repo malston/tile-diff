@@ -7,9 +7,8 @@ require (
 	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/onsi/gomega v1.38.3
 	github.com/pivotal-cf/go-pivnet/v7 v7.0.3-0.20251210214834-422885a2f23e
-	github.com/schollz/progressbar/v3 v3.18.0
 	golang.org/x/net v0.48.0
-	gopkg.in/dnaeon/go-vcr.v3 v3.2.0
+	gopkg.in/yaml.v2 v2.2.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -32,7 +31,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
-	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.5 // indirect

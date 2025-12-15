@@ -21,9 +21,11 @@ Verify installation:
 ### Scenario 1: Basic Tile Comparison (2 minutes)
 
 **What you need:**
+
 - Two `.pivotal` files (old and new versions)
 
 **Command:**
+
 ```bash
 ./tile-diff \
   --old-tile /path/to/srt-6.0.22-build.2.pivotal \
@@ -31,12 +33,14 @@ Verify installation:
 ```
 
 **What you get:**
+
 - List of new properties
 - List of removed properties
 - List of changed properties
 - Summary counts
 
 **Example output:**
+
 ```
 ✨ New Properties (4):
   + tanzu_cf_cli_enable_auto_upgrades (boolean)
@@ -56,6 +60,7 @@ Summary:
 ```
 
 **Use this when:**
+
 - Initial upgrade scope assessment
 - You don't have access to Ops Manager yet
 - Comparing tiles for documentation purposes
@@ -65,6 +70,7 @@ Summary:
 ### Scenario 2: Full Analysis with Your Current Config (5 minutes)
 
 **What you need:**
+
 - Two `.pivotal` files
 - Ops Manager URL
 - Ops Manager credentials
@@ -86,13 +92,14 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="cf") | .guid'
   --old-tile /path/to/srt-6.0.22-build.2.pivotal \
   --new-tile /path/to/srt-10.2.5-build.2.pivotal \
   --product-guid cf-abc123def456 \
-  --ops-manager-url https://opsman.tas.vcf.lab \
+  --ops-manager-url https://opsman.example.com \
   --username admin \
   --password your-password \
   --skip-ssl-validation
 ```
 
 **What you get:**
+
 - **🚨 Required Actions**: Must be done before upgrade
 - **⚠️ Warnings**: Should be reviewed
 - **ℹ️ Informational**: Nice to know
@@ -100,6 +107,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="cf") | .guid'
 - Current values from your deployment
 
 **Example output:**
+
 ```
 ================================================================================
 🚨 REQUIRED ACTIONS (2)
@@ -121,6 +129,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="cf") | .guid'
 ```
 
 **Use this when:**
+
 - Planning actual upgrade execution
 - Creating pre-upgrade checklists
 - Validating upgrade readiness
@@ -130,6 +139,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="cf") | .guid'
 ### Scenario 3: JSON Output for Automation (3 minutes)
 
 **Command:**
+
 ```bash
 ./tile-diff \
   --old-tile /path/to/old.pivotal \
@@ -138,6 +148,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="cf") | .guid'
 ```
 
 **Parse results:**
+
 ```bash
 # Check for required actions
 jq '.summary.required_actions' analysis.json
@@ -150,6 +161,7 @@ jq '.summary.warnings' analysis.json
 ```
 
 **Use this when:**
+
 - Integrating with CI/CD pipelines
 - Automating upgrade readiness checks
 - Building custom dashboards or reports
@@ -161,7 +173,7 @@ jq '.summary.warnings' analysis.json
 ### Compare tiles with env variables for credentials
 
 ```bash
-export OM_TARGET="https://opsman.tas.vcf.lab"
+export OM_TARGET="https://opsman.example.com"
 export OM_USERNAME="admin"
 export OM_PASSWORD="your-password"
 
@@ -216,6 +228,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="p-mysql")'
 ### Categories Explained
 
 **🚨 Required Actions**
+
 - New properties that have no default and are not optional
 - Properties where your current value violates new constraints
 - Properties that changed from optional to required
@@ -223,6 +236,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="p-mysql")'
 **Action:** Must address before upgrade
 
 **⚠️ Warnings**
+
 - Properties you're using that are removed in new version
 - Properties where type changed
 - Properties with significant constraint changes
@@ -230,6 +244,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="p-mysql")'
 **Action:** Review and plan for changes
 
 **ℹ️ Informational**
+
 - New optional properties with defaults
 - Removed properties you never configured
 - Default value changes
@@ -243,6 +258,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="p-mysql")'
 ### "Error: --old-tile and --new-tile are required"
 
 **Fix:** Provide both tile paths:
+
 ```bash
 ./tile-diff --old-tile path1.pivotal --new-tile path2.pivotal
 ```
@@ -250,6 +266,7 @@ om curl -p /api/v0/staged/products | jq -r '.[] | select(.type=="p-mysql")'
 ### "Error loading old tile: failed to extract"
 
 **Fix:** Verify file is a valid `.pivotal` file:
+
 ```bash
 file old.pivotal  # Should show: Zip archive data
 unzip -t old.pivotal  # Test archive integrity
@@ -258,6 +275,7 @@ unzip -t old.pivotal  # Test archive integrity
 ### "Error: failed to connect to Ops Manager"
 
 **Fixes:**
+
 1. Check URL is correct and accessible: `curl -k https://your-opsman-url`
 2. Verify credentials
 3. Add `--skip-ssl-validation` for self-signed certs
@@ -266,6 +284,7 @@ unzip -t old.pivotal  # Test archive integrity
 ### "No output or shows identical tiles"
 
 **Possible causes:**
+
 1. Comparing same version twice
 2. Only system-managed properties changed (not shown in output)
 
@@ -278,7 +297,7 @@ unzip -t old.pivotal  # Test archive integrity
 - **Detailed guide**: See [USER_GUIDE.md](USER_GUIDE.md) for comprehensive documentation
 - **Real examples**: See [EXAMPLES.md](EXAMPLES.md) for real-world upgrade scenarios
 - **Integration**: Add tile-diff to your upgrade workflow
-- **Feedback**: Report issues at https://github.com/malston/tile-diff/issues
+- **Feedback**: Report issues at <https://github.com/malston/tile-diff/issues>
 
 ## Pro Tips
 

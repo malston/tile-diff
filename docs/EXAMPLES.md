@@ -11,6 +11,7 @@ Real-world examples showing how to use tile-diff in different scenarios.
 5. [Data Services Tile Upgrade](#example-5-data-services-tile-upgrade)
 6. [Configuration Audit](#example-6-configuration-audit)
 7. [Upgrade Runbook Generation](#example-7-upgrade-runbook-generation)
+8. [Harbor Container Registry Upgrade with Auto-Detection](#example-8-harbor-container-registry-upgrade-with-auto-detection)
 
 ---
 
@@ -39,6 +40,7 @@ pivnet download-product-files \
 ```
 
 **Output Analysis:**
+
 ```
 Properties in old tile: 274
 Properties in new tile: 272
@@ -71,6 +73,7 @@ echo "Production CF GUID: $PROD_GUID"
 ```
 
 **Output (Sample):**
+
 ```
 ================================================================================
 🚨 REQUIRED ACTIONS (1)
@@ -171,6 +174,7 @@ cat upgrade-checklist.txt
 ```
 
 **Team Decision**: Block upgrade until:
+
 1. License key obtained
 2. Buildpack audit completed and buildpacks updated if needed
 
@@ -266,6 +270,7 @@ echo "Review all files before proceeding with upgrade"
 ```
 
 **Output:**
+
 ```
 =========================================
 Analyzing dev environment
@@ -554,6 +559,7 @@ echo "Full analysis saved to: /tmp/hotfix-analysis.json"
 ```
 
 **Output:**
+
 ```
 🚨 EMERGENCY HOTFIX ANALYSIS: 6.0.22 → 6.0.23
 ==================================================
@@ -605,6 +611,7 @@ cat mysql-upgrade-analysis.txt
 ```
 
 **Sample Output:**
+
 ```
 ================================================================================
 🚨 REQUIRED ACTIONS (1)
@@ -636,6 +643,7 @@ cat mysql-upgrade-analysis.txt
 ```
 
 **Decision**:
+
 - Required action is validation-only (current value already compliant)
 - Set global recipient email for better alerting
 - Proceed with upgrade
@@ -871,6 +879,106 @@ echo "4. Execute runbook in dev environment first"
 
 ---
 
+## Example 8: Harbor Container Registry Upgrade with Auto-Detection
+
+**Scenario**: You need to upgrade Harbor Container Registry from 2.11.0 to 2.13.2 and want the simplest workflow possible.
+
+### Approach 1: Auto-Detect Product GUID (Simplest)
+
+```bash
+./tile-diff \
+  --product-slug harbor-container-registry \
+  --old-version 2.11.0 \
+  --new-version 2.13.2 \
+  --ops-manager-url https://opsman.example.com \
+  --username admin \
+  --password "$OM_PASSWORD" \
+  --skip-ssl-validation
+```
+
+**Output:**
+
+```
+Auto-detecting product GUID for 'harbor-container-registry'...
+  Detected GUID: harbor-container-registry-252c73c039a1553d111d
+
+Querying Ops Manager API...
+  Found 56 total properties
+  Configurable: 53
+  Currently configured: ~27
+
+================================================================================
+                  Ops Manager Tile Upgrade Analysis
+================================================================================
+
+Old Version: /Users/user/.tile-diff/cache/harbor-container-registry-2.11.0-build.2.pivotal
+New Version: /Users/user/.tile-diff/cache/harbor-container-registry-2.13.2-build.7.pivotal
+
+Total Changes: 1
+  Required Actions: 0
+  Warnings: 0
+  Informational: 1
+
+================================================================================
+ℹ️  INFORMATIONAL
+================================================================================
+
+New optional features available:
+
+1. trivy_skip_java_db_update
+   Type: boolean
+   Default: false
+   Note: Optional - review for potential improvements
+```
+
+**Benefits**:
+
+- No need to look up product GUID manually
+- Automatically filters results based on your current configuration
+- Single command gets everything done
+
+### Approach 2: Initial Assessment Without Credentials
+
+If you want to see what's changing before accessing Ops Manager:
+
+```bash
+./tile-diff \
+  --product-slug harbor-container-registry \
+  --old-version 2.11.0 \
+  --new-version 2.13.2
+```
+
+**Output:** Same formatted report, but shows ALL changes (no filtering).
+
+**When to use**:
+
+- Initial planning meetings
+- Offline analysis
+- When Ops Manager access is restricted
+
+### Approach 3: Using Local Tiles with Auto-Detection
+
+If you already have tiles downloaded:
+
+```bash
+./tile-diff \
+  --old-tile harbor-2.11.0-build.2.pivotal \
+  --new-tile harbor-2.13.2-build.7.pivotal \
+  --product-slug harbor-container-registry \
+  --ops-manager-url https://opsman.example.com \
+  --username admin \
+  --password "$OM_PASSWORD" \
+  --skip-ssl-validation
+```
+
+**Benefits**:
+
+- Faster (no Pivnet download)
+- Still gets auto-detected GUID
+- Works in airgapped environments
+
+---
+
 ## Tips for Effective Use
 
 1. **Always test in non-prod first**: Use dev environment for initial analysis
@@ -884,4 +992,4 @@ echo "4. Execute runbook in dev environment first"
 
 - **User Guide**: [USER_GUIDE.md](USER_GUIDE.md) - Comprehensive documentation
 - **Quick Start**: [QUICKSTART.md](QUICKSTART.md) - Get started in 5 minutes
-- **Issues**: https://github.com/malston/tile-diff/issues - Report bugs or request features
+- **Issues**: <https://github.com/malston/tile-diff/issues> - Report bugs or request features

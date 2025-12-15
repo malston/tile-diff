@@ -16,3 +16,9 @@ type Property struct {
 type PropertiesResponse struct {
 	Properties map[string]Property `json:"properties"`
 }
+
+// StagedProduct represents a staged product in Ops Manager
+type StagedProduct struct {
+	GUID string `json:"guid"`
+	Type string `json:"type"`
+}

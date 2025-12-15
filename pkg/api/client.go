@@ -136,3 +136,63 @@ func (c *Client) GetProperties(productGUID string) (*PropertiesResponse, error) 
 
 	return &properties, nil
 }
+
+// GetStagedProducts retrieves all staged products
+func (c *Client) GetStagedProducts() ([]StagedProduct, error) {
+	// Authenticate if we don't have a token and not using basic auth
+	if c.accessToken == "" && !c.useBasicAuth {
+		if err := c.authenticate(); err != nil {
+			return nil, fmt.Errorf("failed to authenticate: %w", err)
+		}
+	}
+
+	url := fmt.Sprintf("%s/api/v0/staged/products", c.baseURL)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Use basic auth or bearer token based on what's available
+	if c.useBasicAuth {
+		req.SetBasicAuth(c.username, c.password)
+	} else {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var products []StagedProduct
+	err = json.NewDecoder(resp.Body).Decode(&products)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return products, nil
+}
+
+// FindProductGUID finds a product GUID by product slug/type
+func (c *Client) FindProductGUID(productSlug string) (string, error) {
+	products, err := c.GetStagedProducts()
+	if err != nil {
+		return "", err
+	}
+
+	for _, product := range products {
+		if product.Type == productSlug {
+			return product.GUID, nil
+		}
+	}
+
+	return "", fmt.Errorf("no staged product found with type '%s'", productSlug)
+}

@@ -82,7 +82,7 @@ func GenerateTextReportWithFeatures(enriched *EnrichedChanges, oldVersion, newVe
 
 func writeHeader(sb *strings.Builder, oldVersion, newVersion string) {
 	sb.WriteString(separator)
-	sb.WriteString("                        TAS Tile Upgrade Analysis\n")
+	sb.WriteString("                  Ops Manager Tile Upgrade Analysis\n")
 	sb.WriteString(separator)
 	sb.WriteString("\n")
 	sb.WriteString(fmt.Sprintf("Old Version: %s\n", oldVersion))

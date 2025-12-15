@@ -12,6 +12,7 @@ import (
 	"github.com/malston/tile-diff/pkg/api"
 	"github.com/malston/tile-diff/pkg/compare"
 	"github.com/malston/tile-diff/pkg/metadata"
+	"github.com/malston/tile-diff/pkg/om"
 	"github.com/malston/tile-diff/pkg/pivnet"
 	"github.com/malston/tile-diff/pkg/releasenotes"
 	"github.com/malston/tile-diff/pkg/report"
@@ -188,19 +189,21 @@ func main() {
 
 	// Detect mode: local files or Pivnet download
 	usingLocalFiles := *oldTile != "" || *newTile != ""
-	usingPivnet := *productSlug != "" || *oldVersion != "" || *newVersion != ""
+	usingPivnetDownload := (*oldVersion != "" || *newVersion != "") && *productSlug != ""
 
-	if usingLocalFiles && usingPivnet {
-		fmt.Fprintf(os.Stderr, "Error: Cannot mix local and Pivnet modes\n")
+	// Don't allow mixing local tile paths with Pivnet version flags
+	if usingLocalFiles && usingPivnetDownload {
+		fmt.Fprintf(os.Stderr, "Error: Cannot mix local tile files with Pivnet download versions\n")
 		fmt.Fprintf(os.Stderr, "Use either:\n")
 		fmt.Fprintf(os.Stderr, "  --old-tile + --new-tile (local files)\n")
 		fmt.Fprintf(os.Stderr, "OR\n")
-		fmt.Fprintf(os.Stderr, "  --product-slug + --old-version + --new-version (Pivnet download)\n\n")
+		fmt.Fprintf(os.Stderr, "  --product-slug + --old-version + --new-version (Pivnet download)\n")
+		fmt.Fprintf(os.Stderr, "\nNote: --product-slug can be used with local files for auto-detecting product GUID\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	if !usingLocalFiles && !usingPivnet {
+	if !usingLocalFiles && !usingPivnetDownload {
 		fmt.Fprintf(os.Stderr, "Error: Must provide either local files or Pivnet download options\n\n")
 		flag.Usage()
 		os.Exit(1)
@@ -208,7 +211,7 @@ func main() {
 
 	var oldTilePath, newTilePath string
 
-	if usingPivnet {
+	if usingPivnetDownload {
 		// Validate Pivnet flags
 		if *productSlug == "" || *oldVersion == "" || *newVersion == "" {
 			fmt.Fprintf(os.Stderr, "Error: Pivnet mode requires --product-slug, --old-version, and --new-version\n\n")
@@ -354,6 +357,39 @@ func main() {
 	}
 	results := compare.CompareMetadata(oldMetadata, newMetadata, true)
 
+	// Extract and compare configuration templates using om config-template
+	var configComparison *om.ConfigComparison
+	if err := om.CheckOMAvailable(); err == nil {
+		if !jsonMode {
+			fmt.Printf("\nExtracting configuration templates...\n")
+		}
+
+		oldConfig, err := om.ExtractConfig(oldTilePath)
+		if err != nil {
+			if *verbose {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to extract config from old tile: %v\n", err)
+			}
+		}
+
+		newConfig, err := om.ExtractConfig(newTilePath)
+		if err != nil {
+			if *verbose {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to extract config from new tile: %v\n", err)
+			}
+		}
+
+		if oldConfig != nil && newConfig != nil {
+			configComparison = om.CompareConfigs(oldConfig, newConfig)
+			if !jsonMode {
+				fmt.Printf("  Found %d configuration changes\n",
+					len(configComparison.Added)+len(configComparison.Removed)+len(configComparison.Changed))
+			}
+		}
+	} else if *verbose {
+		fmt.Fprintf(os.Stderr, "Note: om CLI not available - skipping config template comparison\n")
+		fmt.Fprintf(os.Stderr, "Install from: https://github.com/pivotal-cf/om\n")
+	}
+
 	// Try release notes enrichment
 	var matches map[string]releasenotes.Match
 	var enrichmentResult *EnrichmentResult
@@ -448,16 +484,75 @@ func main() {
 		fmt.Printf("\nConfigurable properties:\n")
 		fmt.Printf("  Old tile: %d\n", oldConfigurable)
 		fmt.Printf("  New tile: %d\n", newConfigurable)
+
+		// Display configuration changes from om config-template
+		if configComparison != nil {
+			fmt.Printf("\nConfiguration Changes (from om config-template):\n")
+			fmt.Printf("=================================================\n\n")
+
+			// Display added config properties
+			if len(configComparison.Added) > 0 {
+				fmt.Printf("✨ New Configuration Properties (%d):\n", len(configComparison.Added))
+				for _, change := range configComparison.Added {
+					fmt.Printf("  + %s\n", change.PropertyName)
+				}
+				fmt.Println()
+			}
+
+			// Display removed config properties
+			if len(configComparison.Removed) > 0 {
+				fmt.Printf("🗑️  Removed Configuration Properties (%d):\n", len(configComparison.Removed))
+				for _, change := range configComparison.Removed {
+					fmt.Printf("  - %s\n", change.PropertyName)
+				}
+				fmt.Println()
+			}
+
+			// Display changed config properties
+			if len(configComparison.Changed) > 0 {
+				fmt.Printf("🔄 Changed Configuration Properties (%d):\n", len(configComparison.Changed))
+				for _, change := range configComparison.Changed {
+					fmt.Printf("  ~ %s: %s\n", change.PropertyName, change.Description)
+				}
+				fmt.Println()
+			}
+
+			// Config summary
+			if len(configComparison.Added) == 0 && len(configComparison.Removed) == 0 && len(configComparison.Changed) == 0 {
+				fmt.Printf("No configuration changes detected\n\n")
+			}
+		}
+	}
+
+	// Auto-detect product GUID if not provided but credentials are available
+	effectiveProductGUID := *productGUID
+	if effectiveProductGUID == "" && *productSlug != "" && *opsManagerURL != "" && *username != "" && *password != "" {
+		if !jsonMode {
+			fmt.Printf("\nAuto-detecting product GUID for '%s'...\n", *productSlug)
+		}
+		client := api.NewClient(*opsManagerURL, *username, *password, *skipSSL)
+		detectedGUID, err := client.FindProductGUID(*productSlug)
+		if err != nil {
+			if *verbose {
+				fmt.Fprintf(os.Stderr, "Warning: Could not auto-detect product GUID: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Continuing without current config analysis...\n\n")
+			}
+		} else {
+			effectiveProductGUID = detectedGUID
+			if !jsonMode {
+				fmt.Printf("  Detected GUID: %s\n", effectiveProductGUID)
+			}
+		}
 	}
 
 	// Load current configuration if API credentials provided
-	if *productGUID != "" && *opsManagerURL != "" && *username != "" && *password != "" {
+	if effectiveProductGUID != "" && *opsManagerURL != "" && *username != "" && *password != "" {
 		if !jsonMode {
 			fmt.Printf("\nQuerying Ops Manager API...\n")
 		}
 		client := api.NewClient(*opsManagerURL, *username, *password, *skipSSL)
 
-		properties, err := client.GetProperties(*productGUID)
+		properties, err := client.GetProperties(effectiveProductGUID)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error fetching properties from Ops Manager: %v\n", err)
 			os.Exit(1)
@@ -512,12 +607,39 @@ func main() {
 			}
 			fmt.Println(textReport)
 		}
-	} else if *productGUID != "" {
-		fmt.Printf("\nSkipping Ops Manager API (credentials not provided)\n")
-		fmt.Printf("To include current configuration, provide:\n")
-		fmt.Printf("  --ops-manager-url, --username, --password\n")
 	} else {
-		fmt.Println("\nNote: Provide Ops Manager credentials for actionable report with current config analysis")
+		// Generate formatted report without Ops Manager API
+		if !jsonMode {
+			fmt.Printf("\nGenerating upgrade analysis report...\n")
+			if effectiveProductGUID == "" && *opsManagerURL != "" {
+				fmt.Printf("Note: Showing all changes (no current config filtering)\n")
+				fmt.Printf("      Provide --product-guid for filtered report based on your deployment\n")
+			} else if effectiveProductGUID == "" {
+				fmt.Printf("Note: Showing all changes (no current config filtering)\n")
+				fmt.Printf("      Provide Ops Manager credentials for filtered report\n")
+			}
+		}
+
+		// Categorize all changes (without filtering by current config)
+		categorized := report.CategorizeChanges(results)
+
+		// Generate report based on format
+		fmt.Println()
+		switch *reportFormat {
+		case "json":
+			jsonReport := report.GenerateJSONReport(categorized, oldTilePath, newTilePath)
+			fmt.Println(jsonReport)
+		default:
+			// Use enriched report if we have matches
+			var textReport string
+			if len(matches) > 0 {
+				enriched := report.EnrichChanges(categorized, matches)
+				textReport = report.GenerateTextReportWithFeatures(enriched, oldTilePath, newTilePath)
+			} else {
+				textReport = report.GenerateTextReport(categorized, oldTilePath, newTilePath)
+			}
+			fmt.Println(textReport)
+		}
 	}
 }
 
