@@ -30,6 +30,9 @@ jobs:
     - name: Run unit tests
       run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./pkg/...
 
+    - name: Check available disk space
+      run: df -h /
+
     - name: Run acceptance tests (Ginkgo)
       env:
         PIVNET_TOKEN: ${{ secrets.PIVNET_TOKEN }}
