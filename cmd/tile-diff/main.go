@@ -261,8 +261,8 @@ func main() {
 			eulaFile = filepath.Join(cacheDirectory, "eula_acceptance.json")
 		}
 
-		// Create downloader
-		downloader := pivnet.NewDownloader(client, cacheDirectory, manifestFile, eulaFile, 20)
+		// Create downloader (quiet mode in JSON to suppress progress output)
+		downloader := pivnet.NewDownloader(client, cacheDirectory, manifestFile, eulaFile, 20, jsonMode)
 
 		// Download old tile
 		if !jsonMode {

@@ -19,7 +19,7 @@ func TestDownloader(t *testing.T) {
 	manifestFile := filepath.Join(tempDir, "manifest.json")
 	eulaFile := filepath.Join(tempDir, "eulas.json")
 
-	downloader := NewDownloader(client, cacheDir, manifestFile, eulaFile, 20)
+	downloader := NewDownloader(client, cacheDir, manifestFile, eulaFile, 20, false)
 
 	// We can't test actual downloads without mocking the Pivnet API
 	// This test just verifies the downloader can be created

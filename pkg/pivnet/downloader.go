@@ -4,6 +4,7 @@ package pivnet
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -16,15 +17,17 @@ type Downloader struct {
 	cache       *CacheManager
 	eula        *EULAManager
 	diskManager *DiskManager
+	quiet       bool // Suppress progress output
 }
 
 // NewDownloader creates a new downloader
-func NewDownloader(client *Client, cacheDir, manifestFile, eulaFile string, minFreeSpaceGB int64) *Downloader {
+func NewDownloader(client *Client, cacheDir, manifestFile, eulaFile string, minFreeSpaceGB int64, quiet bool) *Downloader {
 	return &Downloader{
 		client:      client,
 		cache:       NewCacheManager(cacheDir, manifestFile),
 		eula:        NewEULAManager(eulaFile),
 		diskManager: NewDiskManager(minFreeSpaceGB),
+		quiet:       quiet,
 	}
 }
 
@@ -228,14 +231,19 @@ func (d *Downloader) downloadFile(productSlug string, releaseID, fileID int, tar
 	}
 	defer out.Close()
 
-	// Create progress bar
-	bar := progressbar.DefaultBytes(
-		fileSize,
-		"downloading",
-	)
+	// Create progress writer (suppress if quiet mode)
+	var progressWriter io.Writer
+	if d.quiet {
+		progressWriter = io.Discard
+	} else {
+		progressWriter = progressbar.DefaultBytes(
+			fileSize,
+			"downloading",
+		)
+	}
 
 	// Download file - SDK expects *os.File and a separate progress writer
-	err = d.client.DownloadFile(productSlug, releaseID, fileID, out, bar)
+	err = d.client.DownloadFile(productSlug, releaseID, fileID, out, progressWriter)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
