@@ -12,6 +12,7 @@ import (
 	"github.com/malston/tile-diff/pkg/api"
 	"github.com/malston/tile-diff/pkg/compare"
 	"github.com/malston/tile-diff/pkg/metadata"
+	"github.com/malston/tile-diff/pkg/om"
 	"github.com/malston/tile-diff/pkg/pivnet"
 	"github.com/malston/tile-diff/pkg/releasenotes"
 	"github.com/malston/tile-diff/pkg/report"
@@ -354,6 +355,39 @@ func main() {
 	}
 	results := compare.CompareMetadata(oldMetadata, newMetadata, true)
 
+	// Extract and compare configuration templates using om config-template
+	var configComparison *om.ConfigComparison
+	if err := om.CheckOMAvailable(); err == nil {
+		if !jsonMode {
+			fmt.Printf("\nExtracting configuration templates...\n")
+		}
+
+		oldConfig, err := om.ExtractConfig(oldTilePath)
+		if err != nil {
+			if *verbose {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to extract config from old tile: %v\n", err)
+			}
+		}
+
+		newConfig, err := om.ExtractConfig(newTilePath)
+		if err != nil {
+			if *verbose {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to extract config from new tile: %v\n", err)
+			}
+		}
+
+		if oldConfig != nil && newConfig != nil {
+			configComparison = om.CompareConfigs(oldConfig, newConfig)
+			if !jsonMode {
+				fmt.Printf("  Found %d configuration changes\n",
+					len(configComparison.Added)+len(configComparison.Removed)+len(configComparison.Changed))
+			}
+		}
+	} else if *verbose {
+		fmt.Fprintf(os.Stderr, "Note: om CLI not available - skipping config template comparison\n")
+		fmt.Fprintf(os.Stderr, "Install from: https://github.com/pivotal-cf/om\n")
+	}
+
 	// Try release notes enrichment
 	var matches map[string]releasenotes.Match
 	var enrichmentResult *EnrichmentResult
@@ -448,6 +482,44 @@ func main() {
 		fmt.Printf("\nConfigurable properties:\n")
 		fmt.Printf("  Old tile: %d\n", oldConfigurable)
 		fmt.Printf("  New tile: %d\n", newConfigurable)
+
+		// Display configuration changes from om config-template
+		if configComparison != nil {
+			fmt.Printf("\nConfiguration Changes (from om config-template):\n")
+			fmt.Printf("=================================================\n\n")
+
+			// Display added config properties
+			if len(configComparison.Added) > 0 {
+				fmt.Printf("✨ New Configuration Properties (%d):\n", len(configComparison.Added))
+				for _, change := range configComparison.Added {
+					fmt.Printf("  + %s\n", change.PropertyName)
+				}
+				fmt.Println()
+			}
+
+			// Display removed config properties
+			if len(configComparison.Removed) > 0 {
+				fmt.Printf("🗑️  Removed Configuration Properties (%d):\n", len(configComparison.Removed))
+				for _, change := range configComparison.Removed {
+					fmt.Printf("  - %s\n", change.PropertyName)
+				}
+				fmt.Println()
+			}
+
+			// Display changed config properties
+			if len(configComparison.Changed) > 0 {
+				fmt.Printf("🔄 Changed Configuration Properties (%d):\n", len(configComparison.Changed))
+				for _, change := range configComparison.Changed {
+					fmt.Printf("  ~ %s: %s\n", change.PropertyName, change.Description)
+				}
+				fmt.Println()
+			}
+
+			// Config summary
+			if len(configComparison.Added) == 0 && len(configComparison.Removed) == 0 && len(configComparison.Changed) == 0 {
+				fmt.Printf("No configuration changes detected\n\n")
+			}
+		}
 	}
 
 	// Load current configuration if API credentials provided
