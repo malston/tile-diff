@@ -154,23 +154,65 @@ Once accepted for a product, the acceptance is remembered locally and you won't 
 ### Example Output
 
 ```
-================================================================================
-                    Ops Manager Tile Upgrade Analysis
-================================================================================
+tile-diff - Ops Manager Product Tile Comparison
+================================================
 
-Old Version: srt-6.0.22
-New Version: srt-10.2.5
+Mode: Pivnet Download
+Product: cf
+Versions: 6.0.22 -> 10.2.5
 
-Loading old tile...
-  Found 274 properties (184 configurable)
-Loading new tile...
-  Found 272 properties (182 configurable)
+Resolving and downloading old tile (6.0.22)...
+✓ Old tile: /Users/user/.tile-diff/cache/srt-6.0.22.pivotal
+
+Resolving and downloading new tile (10.2.5)...
+✓ New tile: /Users/user/.tile-diff/cache/srt-10.2.5.pivotal
+
+Loading old tile: /Users/user/.tile-diff/cache/srt-6.0.22.pivotal
+  Found 274 properties
+Loading new tile: /Users/user/.tile-diff/cache/srt-10.2.5.pivotal
+  Found 272 properties
+
+Comparing tiles...
+
+Comparison Results:
+===================
+
+✨ New Properties (8):
+  + .properties.new_security_setting (boolean)
+  + .properties.enhanced_monitoring (string)
+  ...
+
+🗑️  Removed Properties (4):
+  - .properties.deprecated_timeout (integer)
+  - .properties.old_feature (string)
+  ...
+
+🔄 Changed Properties (2):
+  ~ .properties.authentication_method: Type changed from string to selector
+  ~ .properties.memory_limit: Constraints changed
+
+Summary:
+  Properties in old tile: 274
+  Properties in new tile: 272
+  Added: 8, Removed: 4, Changed: 2
+
+Configurable properties:
+  Old tile: 184
+  New tile: 182
 
 Querying Ops Manager API...
   Found 599 total properties
-  Currently configured: 156
+  Configurable: 184
+  Currently configured: ~156
 
-Analyzing changes...
+Generating actionable report...
+
+================================================================================
+                        TAS Tile Upgrade Analysis
+================================================================================
+
+Old Version: /Users/user/.tile-diff/cache/srt-6.0.22.pivotal
+New Version: /Users/user/.tile-diff/cache/srt-10.2.5.pivotal
 
 Total Changes: 12
   Required Actions: 2
@@ -181,59 +223,46 @@ Total Changes: 12
 🚨 REQUIRED ACTIONS
 ================================================================================
 
+These changes MUST be addressed before upgrading:
+
 1. .properties.new_security_setting
    Type: boolean
-   Status: New required property (no default)
-   Current: Not set
    Action: Must configure this property before upgrading
-   Recommendation: Set to 'true' for enhanced security
 
 2. .properties.authentication_method
    Type: selector
-   Status: Type changed from string to selector
-   Current: "basic"
-   Action: Update to use new selector format
-   Recommendation: Choose 'oauth' option for modern authentication
+   Action: Must configure this property before upgrading
 
 ================================================================================
 ⚠️  WARNINGS
 ================================================================================
 
+These changes should be reviewed:
+
 3. .properties.deprecated_timeout
-   Type: integer
-   Status: Removed in new version
-   Current: 30
-   Action: Property will be ignored after upgrade
-   Recommendation: Review if this setting impacts your deployment
+   Change: Property removed in new version
+   Recommendation: Property will be ignored after upgrade - review and remove from config
 
 4. .properties.memory_limit
-   Type: integer
-   Status: Constraints changed (min: 512 → 1024)
-   Current: 768
-   Action: Current value 768 is below new minimum 1024
-   Recommendation: Update to at least 1024 MB
+   Change: Constraints changed
+   Recommendation: Review this change and verify compatibility
 
 ================================================================================
 ℹ️  INFORMATIONAL
 ================================================================================
 
+New optional features available:
+
 5. .properties.new_optional_feature
    Type: boolean
-   Status: New optional property
-   Current: Not set
    Default: false
-   Recommendation: Enable for improved logging capabilities
+   Note: Optional - review for potential improvements
 
 6. .properties.enhanced_monitoring
    Type: string
-   Status: New optional property
-   Current: Not set
-   Default: "basic"
-   Recommendation: Consider 'advanced' for production environments
+   Default: basic
+   Note: Optional - review for potential improvements
 
-================================================================================
-Summary: 2 required actions must be completed before upgrade
-================================================================================
 ```
 
 ## Development
