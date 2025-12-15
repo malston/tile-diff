@@ -152,13 +152,14 @@ Let tile-diff automatically find your product GUID from Ops Manager:
   --product-slug harbor-container-registry \
   --old-version 2.11.0 \
   --new-version 2.13.2 \
-  --ops-manager-url https://opsman.tas.vcf.lab \
+  --ops-manager-url https://opsman.example.com \
   --username admin \
   --password your-password \
   --skip-ssl-validation
 ```
 
 **How it works**:
+
 1. Queries Ops Manager API for all staged products
 2. Matches the product slug to find the GUID
 3. Uses that GUID to fetch current configuration
@@ -177,12 +178,14 @@ Get professional upgrade analysis even without Ops Manager access:
 ```
 
 **Output**: Same professional "Ops Manager Tile Upgrade Analysis" format showing:
+
 - Total changes summary
 - Required Actions (properties that must be configured)
 - Warnings (properties to review)
 - Informational (optional new features)
 
 **Difference from full analysis**:
+
 - Shows ALL potential changes (no filtering by current config)
 - Useful for initial assessment before accessing Ops Manager
 - Perfect for offline analysis or planning sessions
@@ -422,11 +425,13 @@ Tile-diff shows **what** changed, release notes explain **why**:
 ### 4. Handle Credentials Securely
 
 **Don't do this:**
+
 ```bash
 ./tile-diff --password mysecretpassword  # Password in shell history!
 ```
 
 **Do this instead:**
+
 ```bash
 # Use environment variables
 export OPS_MANAGER_PASSWORD=$(op read "op://vault/opsman/password")
@@ -453,6 +458,7 @@ For each Required Action and Warning:
 **Cause**: Invalid or corrupted `.pivotal` file
 
 **Solution**:
+
 1. Verify file is a valid `.pivotal` file (it's a ZIP archive)
 2. Check file isn't truncated: `unzip -t file.pivotal`
 3. Re-download from Tanzu Network if corrupted
@@ -462,6 +468,7 @@ For each Required Action and Warning:
 **Cause**: Network, authentication, or SSL issues
 
 **Solutions**:
+
 - Verify Ops Manager URL is correct and accessible
 - Check username/password are correct
 - Use `--skip-ssl-validation` for self-signed certs
@@ -476,11 +483,13 @@ For each Required Action and Warning:
 ### Output Shows No Changes
 
 **Possible causes**:
+
 1. Comparing identical tile versions
 2. Only non-configurable properties changed
 3. All changes filtered out (if using current config)
 
 **Verify**:
+
 ```bash
 # Check property counts in output
 # Should show different total properties if versions differ
@@ -586,6 +595,7 @@ jobs:
 ### Q: Do I need Ops Manager access to use tile-diff?
 
 **A**: No. Tile-diff works in two modes:
+
 - **Schema-only mode**: Compare tiles without current config (no credentials needed)
 - **Full analysis mode**: Include current config analysis (requires Ops Manager API access)
 
@@ -596,7 +606,8 @@ jobs:
 ### Q: How do I get the `.pivotal` files?
 
 **A**: Download from Tanzu Network (formerly Pivotal Network):
-1. Log in to the Broadcom Support Portal: https://support.broadcom.com/
+
+1. Log in to the Broadcom Support Portal: <https://support.broadcom.com/>
 2. Navigate to your product (e.g., Tanzu Application Service)
 3. Select version and download `.pivotal` file
 
@@ -607,6 +618,7 @@ jobs:
 ### Q: Can I automate configuration updates based on the report?
 
 **A**: The report provides analysis, not automation. You should:
+
 1. Review the report
 2. Make informed decisions on each change
 3. Apply changes manually via Ops Manager UI or `om configure-product` CLI
@@ -614,6 +626,7 @@ jobs:
 ### Q: What if a property shows as "Required Action" but I don't know what value to use?
 
 **A**:
+
 1. Check tile-diff recommendations (it provides context-aware suggestions)
 2. Read product release notes for feature details
 3. Consult product documentation
@@ -623,6 +636,7 @@ jobs:
 ### Q: Can I compare more than two versions at once?
 
 **A**: Not currently. Tile-diff compares two versions (A → B). For multi-version analysis:
+
 ```bash
 ./tile-diff --old-tile v6.pivotal --new-tile v8.pivotal
 ./tile-diff --old-tile v8.pivotal --new-tile v10.pivotal
@@ -630,8 +644,8 @@ jobs:
 
 ## Support and Contributing
 
-- **Issues**: https://github.com/malston/tile-diff/issues
-- **Documentation**: https://github.com/malston/tile-diff/docs
+- **Issues**: <https://github.com/malston/tile-diff/issues>
+- **Documentation**: <https://github.com/malston/tile-diff/docs>
 - **Contributing**: See CONTRIBUTING.md in repository
 
 ## Next Steps

@@ -40,6 +40,7 @@ pivnet download-product-files \
 ```
 
 **Output Analysis:**
+
 ```
 Properties in old tile: 274
 Properties in new tile: 272
@@ -72,6 +73,7 @@ echo "Production CF GUID: $PROD_GUID"
 ```
 
 **Output (Sample):**
+
 ```
 ================================================================================
 🚨 REQUIRED ACTIONS (1)
@@ -172,6 +174,7 @@ cat upgrade-checklist.txt
 ```
 
 **Team Decision**: Block upgrade until:
+
 1. License key obtained
 2. Buildpack audit completed and buildpacks updated if needed
 
@@ -267,6 +270,7 @@ echo "Review all files before proceeding with upgrade"
 ```
 
 **Output:**
+
 ```
 =========================================
 Analyzing dev environment
@@ -555,6 +559,7 @@ echo "Full analysis saved to: /tmp/hotfix-analysis.json"
 ```
 
 **Output:**
+
 ```
 🚨 EMERGENCY HOTFIX ANALYSIS: 6.0.22 → 6.0.23
 ==================================================
@@ -606,6 +611,7 @@ cat mysql-upgrade-analysis.txt
 ```
 
 **Sample Output:**
+
 ```
 ================================================================================
 🚨 REQUIRED ACTIONS (1)
@@ -637,6 +643,7 @@ cat mysql-upgrade-analysis.txt
 ```
 
 **Decision**:
+
 - Required action is validation-only (current value already compliant)
 - Set global recipient email for better alerting
 - Proceed with upgrade
@@ -883,13 +890,14 @@ echo "4. Execute runbook in dev environment first"
   --product-slug harbor-container-registry \
   --old-version 2.11.0 \
   --new-version 2.13.2 \
-  --ops-manager-url https://opsman.tas.vcf.lab \
+  --ops-manager-url https://opsman.example.com \
   --username admin \
   --password "$OM_PASSWORD" \
   --skip-ssl-validation
 ```
 
 **Output:**
+
 ```
 Auto-detecting product GUID for 'harbor-container-registry'...
   Detected GUID: harbor-container-registry-252c73c039a1553d111d
@@ -924,6 +932,7 @@ New optional features available:
 ```
 
 **Benefits**:
+
 - No need to look up product GUID manually
 - Automatically filters results based on your current configuration
 - Single command gets everything done
@@ -942,6 +951,7 @@ If you want to see what's changing before accessing Ops Manager:
 **Output:** Same formatted report, but shows ALL changes (no filtering).
 
 **When to use**:
+
 - Initial planning meetings
 - Offline analysis
 - When Ops Manager access is restricted
@@ -955,13 +965,14 @@ If you already have tiles downloaded:
   --old-tile harbor-2.11.0-build.2.pivotal \
   --new-tile harbor-2.13.2-build.7.pivotal \
   --product-slug harbor-container-registry \
-  --ops-manager-url https://opsman.tas.vcf.lab \
+  --ops-manager-url https://opsman.example.com \
   --username admin \
   --password "$OM_PASSWORD" \
   --skip-ssl-validation
 ```
 
 **Benefits**:
+
 - Faster (no Pivnet download)
 - Still gets auto-detected GUID
 - Works in airgapped environments
@@ -981,4 +992,4 @@ If you already have tiles downloaded:
 
 - **User Guide**: [USER_GUIDE.md](USER_GUIDE.md) - Comprehensive documentation
 - **Quick Start**: [QUICKSTART.md](QUICKSTART.md) - Get started in 5 minutes
-- **Issues**: https://github.com/malston/tile-diff/issues - Report bugs or request features
+- **Issues**: <https://github.com/malston/tile-diff/issues> - Report bugs or request features

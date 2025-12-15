@@ -5,6 +5,7 @@ A command-line tool to compare Ops Manager product tile configurations between v
 ## Overview
 
 When upgrading product tiles (e.g., TAS from 6.0.22 to 10.2.5), operators need to understand:
+
 - What new configuration properties must be set
 - What existing properties are no longer supported
 - What properties have changed constraints or defaults
@@ -46,6 +47,7 @@ make build
 #### Download Tiles from Pivnet (Recommended)
 
 **Interactive Mode:**
+
 ```bash
 export PIVNET_TOKEN="your-pivnet-api-token"
 
@@ -56,12 +58,14 @@ export PIVNET_TOKEN="your-pivnet-api-token"
 ```
 
 tile-diff will:
+
 - Resolve version strings (prompts if multiple matches)
 - Show available product files (e.g., TAS vs Small Footprint)
 - Handle EULA acceptance (one-time per product)
 - Cache downloads for reuse
 
 **Non-Interactive Mode (CI/Scripts):**
+
 ```bash
 ./tile-diff \
   --product-slug cf \
@@ -76,6 +80,7 @@ tile-diff will:
 #### Use Local Files
 
 If you've already downloaded tiles:
+
 ```bash
 ./tile-diff \
   --old-tile srt-6.0.22.pivotal \
@@ -85,36 +90,41 @@ If you've already downloaded tiles:
 #### Compare with Current Ops Manager Config
 
 **Option 1: Auto-detect product GUID (Recommended)**
+
 ```bash
 ./tile-diff \
   --product-slug harbor-container-registry \
   --old-version 2.11.0 \
   --new-version 2.13.2 \
-  --ops-manager-url https://opsman.tas.vcf.lab \
+  --ops-manager-url https://opsman.example.com \
   --username admin \
   --password your-password \
   --skip-ssl-validation
 ```
+
 The tool will automatically query Ops Manager to find the product GUID based on the product slug.
 
 **Option 2: Explicit product GUID**
+
 ```bash
 ./tile-diff \
   --old-tile srt-6.0.22.pivotal \
   --new-tile srt-10.2.5.pivotal \
   --product-guid cf-abc123xyz \
-  --ops-manager-url https://opsman.tas.vcf.lab \
+  --ops-manager-url https://opsman.example.com \
   --username admin \
   --password your-password \
   --skip-ssl-validation
 ```
 
 **Option 3: Formatted report without credentials**
+
 ```bash
 ./tile-diff \
   --old-tile harbor-2.11.0.pivotal \
   --new-tile harbor-2.13.2.pivotal
 ```
+
 Even without Ops Manager credentials, you'll get a professional formatted upgrade analysis report showing all potential changes.
 
 #### JSON Output
@@ -129,7 +139,7 @@ Even without Ops Manager credentials, you'll get a professional formatted upgrad
 
 ### Getting a Pivnet API Token
 
-1. Go to the Broadcom Support Portal: https://support.broadcom.com/
+1. Go to the Broadcom Support Portal: <https://support.broadcom.com/>
 2. Sign in with your Broadcom account
 3. Navigate to your API token settings
 4. Copy your "UAA API Token" (64+ characters, not the legacy 20-char token)
@@ -156,12 +166,14 @@ export PIVNET_TOKEN="your-token-here"
 4. Press Enter to continue the download
 
 **Interactive mode:**
+
 ```bash
 ./tile-diff --product-slug cf --old-version 6.0 --new-version 10.2
 # Will pause and show EULA URL if needed
 ```
 
 **Non-interactive mode:**
+
 ```bash
 # For CI/CD: Accept EULAs through web first, then use --accept-eula to acknowledge
 ./tile-diff \
