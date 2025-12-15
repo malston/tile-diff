@@ -231,7 +231,7 @@ Querying Ops Manager API...
 Generating actionable report...
 
 ================================================================================
-                        TAS Tile Upgrade Analysis
+                  Ops Manager Tile Upgrade Analysis
 ================================================================================
 
 Old Version: /Users/user/.tile-diff/cache/srt-6.0.22.pivotal

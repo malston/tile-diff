@@ -176,7 +176,7 @@ Get professional upgrade analysis even without Ops Manager access:
   --new-tile /path/to/harbor-2.13.2.pivotal
 ```
 
-**Output**: Same professional "TAS Tile Upgrade Analysis" format showing:
+**Output**: Same professional "Ops Manager Tile Upgrade Analysis" format showing:
 - Total changes summary
 - Required Actions (properties that must be configured)
 - Warnings (properties to review)

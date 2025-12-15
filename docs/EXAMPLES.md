@@ -900,7 +900,7 @@ Querying Ops Manager API...
   Currently configured: ~27
 
 ================================================================================
-                        TAS Tile Upgrade Analysis
+                  Ops Manager Tile Upgrade Analysis
 ================================================================================
 
 Old Version: /Users/user/.tile-diff/cache/harbor-container-registry-2.11.0-build.2.pivotal
