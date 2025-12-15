@@ -34,15 +34,80 @@ This tool automates that analysis by comparing tile metadata and cross-referenci
 - **[User Guide](docs/USER_GUIDE.md)** - Comprehensive usage documentation
 - **[Examples](docs/EXAMPLES.md)** - Real-world scenarios and use cases
 
-## Quick Start
+## Installation
 
-### Build
+### Download Pre-built Binary (Recommended)
 
+Download the latest release from [GitHub Releases](https://github.com/malston/tile-diff/releases/latest):
+
+**Linux (amd64):**
 ```bash
-make build
+curl -L https://github.com/malston/tile-diff/releases/latest/download/tile-diff-linux-amd64 -o tile-diff
+chmod +x tile-diff
+sudo mv tile-diff /usr/local/bin/
 ```
 
-### Usage
+**Linux (arm64):**
+```bash
+curl -L https://github.com/malston/tile-diff/releases/latest/download/tile-diff-linux-arm64 -o tile-diff
+chmod +x tile-diff
+sudo mv tile-diff /usr/local/bin/
+```
+
+**macOS (Intel):**
+```bash
+curl -L https://github.com/malston/tile-diff/releases/latest/download/tile-diff-darwin-amd64 -o tile-diff
+chmod +x tile-diff
+sudo mv tile-diff /usr/local/bin/
+```
+
+**macOS (Apple Silicon):**
+```bash
+curl -L https://github.com/malston/tile-diff/releases/latest/download/tile-diff-darwin-arm64 -o tile-diff
+chmod +x tile-diff
+sudo mv tile-diff /usr/local/bin/
+```
+
+**Windows (PowerShell):**
+```powershell
+Invoke-WebRequest -Uri https://github.com/malston/tile-diff/releases/latest/download/tile-diff-windows-amd64.exe -OutFile tile-diff.exe
+# Move to a directory in your PATH, e.g., C:\Program Files\tile-diff\
+```
+
+**Verify the installation:**
+```bash
+tile-diff --version
+```
+
+**Verify checksums (optional but recommended):**
+```bash
+# Download checksums file
+curl -L https://github.com/malston/tile-diff/releases/latest/download/checksums.txt -o checksums.txt
+
+# Verify your downloaded binary
+sha256sum -c checksums.txt --ignore-missing
+```
+
+### Build from Source
+
+**Requirements:**
+- Go 1.21+
+
+**Steps:**
+
+```bash
+# Clone the repository
+git clone https://github.com/malston/tile-diff.git
+cd tile-diff
+
+# Build the binary
+make build
+
+# Optionally install to PATH
+sudo cp tile-diff /usr/local/bin/
+```
+
+## Quick Start
 
 #### Download Tiles from Pivnet (Recommended)
 
