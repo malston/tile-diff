@@ -4,7 +4,7 @@ This directory contains the test suite for tile-diff, organized into unit tests,
 
 ## Test Organization
 
-```
+```sh
 test/
 ├── acceptance_suite_test.go      # Ginkgo test suite bootstrap
 ├── acceptance_test.go            # Pivnet integration acceptance tests
@@ -28,6 +28,7 @@ Unit tests validate individual packages and components in isolation:
 - **Dependencies**: None - uses mock data and fixtures
 
 **Example:**
+
 ```bash
 # Run all unit tests with coverage
 make test
@@ -48,6 +49,7 @@ Integration tests verify functionality using real tile files:
 - **Dependencies**: Requires actual `.pivotal` tile files
 
 **Example:**
+
 ```bash
 # Run integration tests (requires tile files in /tmp/elastic-runtime/)
 go test -v -tags=integration ./test/...
@@ -64,6 +66,7 @@ Modern acceptance tests using Ginkgo v2 BDD framework:
 - **Dependencies**: Requires `PIVNET_TOKEN` environment variable
 
 **Test Suites:**
+
 1. **Non-Interactive Mode** - Downloads, version matching, output formats
 2. **Cache Verification** - Tile caching and reuse behavior
 3. **EULA Handling** - EULA acceptance and persistence
@@ -71,6 +74,7 @@ Modern acceptance tests using Ginkgo v2 BDD framework:
 5. **Local Files Mode** - Backward compatibility with local tiles
 
 **Example:**
+
 ```bash
 # Set Pivnet token
 export PIVNET_TOKEN="your-pivnet-api-token"
@@ -102,11 +106,13 @@ ginkgo -v --label-filter='!slow' ./test
 
 **⚠️ Download Tests Warning:**
 Download tests are **SKIPPED by default** to prevent:
+
 - ISP bandwidth quota consumption
 - CI/CD pipeline slowdowns
 - Expensive Pivnet API usage
 
 Only enable when specifically testing download functionality:
+
 ```bash
 export ENABLE_DOWNLOAD_TESTS=1
 make acceptance-test
@@ -203,6 +209,7 @@ Acceptance tests use live Pivnet data and may require updates:
 ```
 
 If tests fail due to missing product versions:
+
 1. Check Pivnet for available versions
 2. Update test to use available product/versions
 3. Update --product-file flag if product has multiple files
@@ -282,6 +289,7 @@ By default, tests clean up their cache. To preserve for debugging:
 ### "PIVNET_TOKEN not set"
 
 Acceptance tests require a Pivnet token:
+
 ```bash
 export PIVNET_TOKEN="your-pivnet-api-token"
 ```
@@ -289,6 +297,7 @@ export PIVNET_TOKEN="your-pivnet-api-token"
 ### "tile-diff binary not found"
 
 Build the binary first:
+
 ```bash
 make build
 ```
@@ -300,6 +309,7 @@ Test product/version no longer available in Pivnet - update test to use availabl
 ### Integration test failures
 
 Integration tests need actual tile files:
+
 ```bash
 # Download tiles manually or use tile-diff to cache them
 ./tile-diff --product-slug cf --old-version 6.0.22 --new-version 10.2.5
@@ -316,6 +326,7 @@ When adding new tests:
 5. **Update documentation** - Keep this README current with test changes
 
 Run the full test suite before submitting:
+
 ```bash
 make test-all
 ```

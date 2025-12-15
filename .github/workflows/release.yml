@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25.1'
+
+    - name: Run tests
+      run: |
+        go test -v ./pkg/...
+        go test -v ./test/...
+
+    - name: Build binaries
+      env:
+        VERSION: ${{ github.ref_name }}
+      run: |
+        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o bin/tile-diff-linux-amd64 ./cmd/tile-diff
+        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=$VERSION" -o bin/tile-diff-linux-arm64 ./cmd/tile-diff
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o bin/tile-diff-darwin-amd64 ./cmd/tile-diff
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=$VERSION" -o bin/tile-diff-darwin-arm64 ./cmd/tile-diff
+        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o bin/tile-diff-windows-amd64.exe ./cmd/tile-diff
+        cd bin && sha256sum * > checksums.txt
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          bin/tile-diff-linux-amd64
+          bin/tile-diff-linux-arm64
+          bin/tile-diff-darwin-amd64
+          bin/tile-diff-darwin-arm64
+          bin/tile-diff-windows-amd64.exe
+          bin/checksums.txt
+        generate_release_notes: true

@@ -20,11 +20,19 @@ var _ = Describe("Pivnet Integration", func() {
 		if os.Getenv("PIVNET_TOKEN") == "" {
 			Skip("PIVNET_TOKEN not set - skipping live Pivnet tests")
 		}
+
 		// Skip download tests unless explicitly enabled
 		// This prevents expensive downloads in CI and local testing
-		if os.Getenv("ENABLE_DOWNLOAD_TESTS") == "" {
-			Skip("ENABLE_DOWNLOAD_TESTS not set - skipping download tests (set to '1' to enable)")
+		spec := CurrentSpecReport()
+		for _, label := range spec.Labels() {
+			if label == "downloads" {
+				if os.Getenv("ENABLE_DOWNLOAD_TESTS") == "" {
+					Skip("ENABLE_DOWNLOAD_TESTS not set - skipping download tests (set to '1' to enable)")
+				}
+				break
+			}
 		}
+
 		setupCacheDir()
 	})
 
