@@ -60,8 +60,8 @@ var _ = Describe("Pivnet Integration", func() {
 
 			// Should show comparison results
 			Expect(output).To(Or(
-				ContainSubstring("Tile Upgrade Analysis"),
-				ContainSubstring("Total Changes"),
+				ContainSubstring("Comparison Results"),
+				ContainSubstring("Summary"),
 			))
 		})
 
@@ -386,8 +386,8 @@ var _ = Describe("Pivnet Integration", func() {
 
 			// Should show comparison results
 			Expect(output).To(Or(
-				ContainSubstring("Tile Upgrade Analysis"),
-				ContainSubstring("Total Changes"),
+				ContainSubstring("Comparison Results"),
+				ContainSubstring("Summary"),
 			), "Should show comparison results")
 
 			// Should NOT mention Pivnet operations
