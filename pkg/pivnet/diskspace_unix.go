@@ -1,3 +1,5 @@
+//go:build unix
+
 // ABOUTME: Disk space checking and management utilities.
 // ABOUTME: Ensures sufficient disk space before downloads with configurable buffer.
 package pivnet
