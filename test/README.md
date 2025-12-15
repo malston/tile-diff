@@ -12,12 +12,7 @@ test/
 ├── comparison_test.go            # Unit tests for comparison logic
 ├── enrichment_test.go            # Unit tests for enrichment logic
 ├── integration_test.go           # Integration tests with real tile files
-├── fixtures/                     # Test fixtures and sample data
-└── acceptance/                   # Legacy bash acceptance tests
-    ├── README.md                 # Documentation for bash tests
-    ├── run_acceptance_tests.sh   # Main test runner
-    ├── smoke_test.sh             # Quick smoke test
-    └── scenarios/                # Individual test scenarios
+└── fixtures/                     # Test fixtures and sample data
 ```
 
 ## Test Types
@@ -83,24 +78,18 @@ export PIVNET_TOKEN="your-pivnet-api-token"
 # Run all acceptance tests
 make acceptance-test
 
+# Or run fast tests only (skips slow downloads)
+make acceptance-test-fast-with-token PIVNET_TOKEN=your-token
+
 # Run specific test suite
 ginkgo -v --focus="Cache Verification" ./test
 
 # Run with debugging output
 ginkgo -v -trace ./test
+
+# Skip slow tests using labels
+ginkgo -v --label-filter='!slow' ./test
 ```
-
-### Legacy Acceptance Tests (Bash)
-
-Original bash-based acceptance tests (maintained for reference):
-
-- **Location**: `test/acceptance/`
-- **Framework**: Bash scripts
-- **Coverage**: Similar to Ginkgo tests but bash-based
-- **Run with**: `test/acceptance/run_acceptance_tests.sh`
-- **Status**: Being phased out in favor of Ginkgo tests
-
-See `test/acceptance/README.md` for details on legacy tests.
 
 ## Test Configuration
 
@@ -194,7 +183,7 @@ var _ = Describe("Feature Name", func() {
 Acceptance tests use live Pivnet data and may require updates:
 
 ```go
-// NOTE: These tests use p-healthwatch 2.4.7 -> 2.4.8 as examples.
+// NOTE: These tests use p-redis 3.2.0 -> 3.2.1 as examples.
 // If these specific versions are no longer available in Pivnet, the tests
 // will fail. This is expected behavior - update the product-slug and
 // versions as needed to match available releases.
@@ -203,7 +192,8 @@ Acceptance tests use live Pivnet data and may require updates:
 If tests fail due to missing product versions:
 1. Check Pivnet for available versions
 2. Update test to use available product/versions
-3. Document the change in test comments
+3. Update --product-file flag if product has multiple files
+4. Document the change in test comments
 
 ### Skipping Tests
 
