@@ -12,6 +12,29 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var _ = Describe("Basic Flags", func() {
+	BeforeEach(func() {
+		if _, err := os.Stat(tileDiffBin); os.IsNotExist(err) {
+			Fail(fmt.Sprintf("tile-diff binary not found at %s - run 'make build' first", tileDiffBin))
+		}
+	})
+
+	Describe("Version Flag", func() {
+		It("prints version information when --version is provided", func() {
+			output, err := runTileDiff("--version")
+
+			// Should succeed
+			Expect(err).NotTo(HaveOccurred(), "Should exit successfully")
+
+			// Should contain version information
+			Expect(output).To(ContainSubstring("version"), "Should contain 'version' in output")
+
+			// Should not contain error messages
+			Expect(output).NotTo(ContainSubstring("Error"), "Should not contain error messages")
+		})
+	})
+})
+
 var _ = Describe("Pivnet Integration", func() {
 	BeforeEach(func() {
 		if _, err := os.Stat(tileDiffBin); os.IsNotExist(err) {

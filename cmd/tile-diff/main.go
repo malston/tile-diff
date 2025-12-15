@@ -18,6 +18,9 @@ import (
 	"github.com/malston/tile-diff/pkg/report"
 )
 
+// version is set via ldflags during build
+var version = "dev"
+
 // EnrichmentResult contains the results of release notes enrichment
 type EnrichmentResult struct {
 	Matches    map[string]releasenotes.Match
@@ -181,8 +184,15 @@ func main() {
 	productConfig := flag.String("product-config", "configs/products.yaml", "Path to product config file")
 	verbose := flag.Bool("verbose", false, "Enable verbose output")
 	debugMatching := flag.Bool("debug-matching", false, "Show detailed property-to-feature matching information")
+	showVersion := flag.Bool("version", false, "Show version information")
 
 	flag.Parse()
+
+	// Handle version flag
+	if *showVersion {
+		fmt.Printf("tile-diff version %s\n", version)
+		os.Exit(0)
+	}
 
 	// Track if we're in JSON mode to suppress non-JSON output
 	jsonMode := *reportFormat == "json"
